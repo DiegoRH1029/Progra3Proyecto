@@ -1,8 +1,12 @@
 package SistemaTaqueria;
 
+import java.util.ArrayList;
+
 public class Mesa {
 	private int numMesa;
 	private EstadoMesa estadoMesa;
+	private ArrayList<Persona> personas;
+	
 	public int getNumMesa() {
 		return numMesa;
 	}
@@ -20,6 +24,13 @@ public class Mesa {
 		this.numMesa = numMesa;
 		this.estadoMesa = estadoMesa;
 	}
-	
-
+	public Mesa(int numMesa) {
+		super();
+		this.numMesa = numMesa;
+		
+	}
+	public void addPersona(Persona persona) {
+		personas.add(persona);
+	}
+		
 }

@@ -102,12 +102,22 @@ public class PanelLogin extends JPanel {
         // BOTON INGRESAR
         JButton btnIngresar = new JButton("ENTRAR AL SISTEMA");
         btnIngresar.setPreferredSize(new Dimension(300, 50));
-        btnIngresar.setBackground(new Color(211, 47, 47));
+        btnIngresar.setBackground(new Color(8,51,162));
         btnIngresar.setForeground(Color.white);
         btnIngresar.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btnIngresar.setFocusPainted(false);
         btnIngresar.setBorder(null);
         btnIngresar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // BOTON Salir
+        JButton btnSalir = new JButton("Cerrar Programa");
+        btnSalir.setPreferredSize(new Dimension(300, 50));
+        btnSalir.setBackground(new Color(211, 47, 47));
+        btnSalir.setForeground(Color.white);
+        btnSalir.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btnSalir.setFocusPainted(false);
+        btnSalir.setBorder(null);
+        btnSalir.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         // Hover del boton
         btnIngresar.addMouseListener(new MouseAdapter() {
@@ -116,8 +126,19 @@ public class PanelLogin extends JPanel {
                 btnIngresar.setForeground(Color.black);
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                btnIngresar.setBackground(new Color(211, 47, 47));
+                btnIngresar.setBackground(new Color(8,51,162));
                 btnIngresar.setForeground(Color.white);
+            }
+        });
+        
+        btnSalir.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnSalir.setBackground(new Color(255, 193, 7));
+                btnSalir.setForeground(Color.black);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnSalir.setBackground(new Color(211, 47, 47));
+                btnSalir.setForeground(Color.white);
             }
         });
         
@@ -128,6 +149,13 @@ public class PanelLogin extends JPanel {
         gbc_btnIngresar.gridy = 5;
         panelTarjeta.add(btnIngresar, gbc_btnIngresar);
         
+        GridBagConstraints gbc_btnSalir = new GridBagConstraints();
+        gbc_btnSalir.fill = GridBagConstraints.HORIZONTAL;
+        gbc_btnSalir.insets = new Insets(0, 0, 0, 0);
+        gbc_btnSalir.gridx = 0;
+        gbc_btnSalir.gridy = 10;
+        panelTarjeta.add(btnSalir, gbc_btnSalir);
+        
         add(panelTarjeta);
         
         // EVENTO DEL BOTÓN
@@ -135,7 +163,7 @@ public class PanelLogin extends JPanel {
             public void actionPerformed(ActionEvent e) {
                 String user = txtUsuario.getText();
                 String pass = new String(txtPass.getPassword());
-                
+                /*
                 // validamos que los espacios no esten vacios 
                 if(user.isEmpty() || pass.isEmpty()) {
                     JOptionPane.showMessageDialog(null, "Por favor , llenar todos los campos");
@@ -145,10 +173,11 @@ public class PanelLogin extends JPanel {
                 try {
                     String rol = validarUsuario(user, pass);
                     if (rol != null) {
-                        JOptionPane.showMessageDialog(null, "Bienvenido " + user + " !");
                         
                         // avisaremos a VentanaMAin y le pasaremos el rol
                         if(ventanaMain != null) {
+                        	txtUsuario.setText("");
+                        	txtPass.setText("");
                             ventanaMain.loginExitoso(user, rol);
                         }
                     } else {
@@ -158,7 +187,17 @@ public class PanelLogin extends JPanel {
                 } catch (SQLException e2) {
                     JOptionPane.showMessageDialog(null, "Error al conectarnos con la BD: " + e2.getMessage());
                 }
+                */
+                //Temporal
+                String rol = "administrador";
+                ventanaMain.loginExitoso(user, rol);
             }
+        });
+        
+        btnSalir.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		ventanaMain.closeProgram();
+        	}
         });
     }
 

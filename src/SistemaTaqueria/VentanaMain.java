@@ -76,7 +76,7 @@ public class VentanaMain extends JFrame {
         VentanaPrincipal.setLayout(new BorderLayout(0, 0));
         
         // --- ENCABEZADO SUPERIOR ---
-        JLabel lblTituloArriba = new JLabel("SISTEMA TAQUERÍA"); 
+        JLabel lblTituloArriba = new JLabel("TAQUERIA GON"); 
         lblTituloArriba.setHorizontalAlignment(SwingConstants.CENTER);
         lblTituloArriba.setFont(new Font("Impact", Font.PLAIN, 36));
         lblTituloArriba.setOpaque(true); // Para que se vea el fondo
@@ -170,19 +170,47 @@ public class VentanaMain extends JFrame {
                 navegarA("MESAS");
             }
         });
+        btnCorteDeCaja.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        	}
+        });
+        btnHistorialDeVentas.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        	}
+        });
+        btnGastos.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        	}
+        });
+        btnTickets.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        	}
+        });
+        btnSalir.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		panelMenu.setVisible(false);
+        		navegarA("LOGIN");
+        	}
+        });
 
         // Aquí puedes agregar la acción para btnSalir (ej. System.exit(0) o regresar al Login)
     }
-
+    	
     // =========================================================
     // MÉTODOS DE NAVEGACIÓN Y CONTROL
     // =========================================================
     
+    //Metodo para cerrar programa
+    public void closeProgram() {
+    	System.exit(0);
+    }
     // Método que llama el PanelLogin cuando las credenciales son correctas
 	public void loginExitoso(String usuario, String rol) {
+		
 		panelBien.setTextUsuario(usuario);
 		cardLayout.show(panelContenedor, "BIENVENIDA");
 		panelMenu.setVisible(true);
+		InventarioDB.cargarInventarioDB();
 		
 		if (rol.equalsIgnoreCase("trabajador")) {
 			btnCorteDeCaja.setVisible(false);
@@ -197,10 +225,19 @@ public class VentanaMain extends JFrame {
 		}
 		
 	}
-    
+	public void mostrarMenu(boolean mostrar) {
+		panelMenu.setVisible(mostrar);
+	}
+
     // Método genérico para movernos entre pantallas
     public void navegarA(String panel) {
+    	
         cardLayout.show(panelContenedor, panel);
+   }
+    public void ordenando(int mesaSelect) {
+    	Mesa mesa = new Mesa(mesaSelect);
+    	panelOrden.setMesa(mesa);
+    	navegarA("ORDEN");
     }
 
     // =========================================================
@@ -228,4 +265,6 @@ public class VentanaMain extends JFrame {
             }
         });
     }
+    
+
 }

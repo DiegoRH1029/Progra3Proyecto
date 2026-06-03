@@ -10,11 +10,13 @@ import java.awt.GridLayout;
 import javax.swing.JButton;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
 import javax.swing.SwingConstants;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-
+import java.awt.Cursor;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
@@ -32,46 +34,43 @@ public class PanelMesas extends JPanel {
 	private VentanaMain ventanaMain;
 	private JButton[] botones=new JButton[12]; //Mejor uso un vector de botones ya que es fijo
 	private int mesaSelect;
+	private Color grisDark = new Color(30,30,30);
+	private JButton btnNewOrden;
+	private JButton btnLiberarMesa;
+	private JButton btnEditarOrden;
+	
 
 	/**
 	 * Create the panel.
 	 */
 	public PanelMesas() {
 		
-		setLayout(new BorderLayout(0, 0));
+		setBackground(grisDark);
+		setLayout(new BorderLayout(15, 15));
+		setBorder(new EmptyBorder(20,20,20,20));
 		
-		JPanel panel = new JPanel();
-		add(panel, BorderLayout.CENTER);
-		panel.setLayout(new GridLayout(0, 2, 0, 0));
+		
+		//Panel central (mesas)
+		JPanel panelCenter = new JPanel();
+		panelCenter.setBackground(grisDark);
+		add(panelCenter, BorderLayout.CENTER);
+		panelCenter.setLayout(new GridLayout(4, 3, 15, 15));
 		
 		//Codigo del panel derecho
-		JPanel panel_1 = new JPanel();
-		panel_1.setPreferredSize(new Dimension(350, 10));
-		add(panel_1, BorderLayout.EAST);
-		panel_1.setLayout(new BoxLayout(panel_1, BoxLayout.Y_AXIS));
+		//Panel este
+		JPanel panelEast = new JPanel();
+		panelEast.setBackground(new Color(45,45,45));
+		panelEast.setPreferredSize(new Dimension(350, 0));
+		panelEast.setBorder(new EmptyBorder(15,15,15,15));
+		add(panelEast, BorderLayout.EAST);
+		panelEast.setLayout(new BorderLayout(0, 15));
 		
-		JLabel labelMesaActual = new JLabel("New label");
-		labelMesaActual.setBorder(new MatteBorder(6, 6, 5, 5, (Color) new Color(255, 0, 0)));
-		labelMesaActual.setPreferredSize(new Dimension(300, 30));
-		labelMesaActual.setMaximumSize(new Dimension(300, 100));
-	
-		labelMesaActual.setBackground(new Color(255, 0, 0));
-		panel_1.add(labelMesaActual);
+		//Titulo de la mesa actial
+		JLabel labelMesaActual = new JLabel("");
+		labelMesaActual.setForeground(new Color(255,193,7));
+		labelMesaActual.setFont(new Font("Segoe UI", Font.BOLD,20));
+		panelEast.add(labelMesaActual,BorderLayout.NORTH);
 		
-		JTextArea textMesa = new JTextArea();
-		panel_1.add(textMesa);
-		
-		JButton btnNewOrden = new JButton("Generar orden ");
-
-		panel_1.add(btnNewOrden);
-		
-		JButton btnEditarOrden = new JButton("Editar orden");
-	
-		panel_1.add(btnEditarOrden);
-		
-		JButton btnLiberarMesa = new JButton("Liberar Mesa");
-
-		panel_1.add(btnLiberarMesa);
 		//Codigo del panel central (Mesas)
 		//Esto lo vamos a reducir para mayo comodidad;
 		//Van a ser 12 botones
@@ -107,9 +106,53 @@ public class PanelMesas extends JPanel {
 					
 				}
 			});
-			panel.add(botones[i]);//Agregamos al panel
+			panelCenter.add(botones[i]);//Agregamos al panel
 			
 		}
+		
+	
+		//Text area (donde se imprimira el ticket
+		JTextArea textMesa = new JTextArea();
+		textMesa.setEditable(false);
+		textMesa.setBackground(new Color(60,60,60));
+		textMesa.setForeground(Color.white);
+		textMesa.setFont(new Font("Monospaced", Font.PLAIN,14));
+		textMesa.setBorder(new EmptyBorder(10,10,10,10));
+		panelEast.add(textMesa);
+		
+		JScrollPane scrollTicket = new JScrollPane(textMesa);
+		scrollTicket.setBorder(null);
+		panelEast.add(scrollTicket,BorderLayout.CENTER);
+		
+		JPanel panelBotones = new JPanel();
+		panelBotones.setBackground(new Color(45,45,45));
+		panelBotones.setLayout(new GridLayout(3,1,0,10));
+		
+		//Botones
+		btnNewOrden = new JButton("Generar orden ");
+		estilizarBotonAccion(btnNewOrden,new Color(46,204,113));
+		
+		btnEditarOrden = new JButton("Editar orden");
+		estilizarBotonAccion(btnEditarOrden,new Color(255,193,7));
+		btnEditarOrden.setForeground(Color.BLACK);
+	
+		
+		btnLiberarMesa = new JButton("Liberar Mesa");
+		estilizarBotonAccion(btnLiberarMesa,new Color(211,47,47));
+		
+		btnNewOrden.setVisible(false);
+		btnEditarOrden.setVisible(false);
+		btnLiberarMesa.setVisible(false);
+		
+		panelBotones.add(btnNewOrden);
+		panelBotones.add(btnEditarOrden);
+		panelBotones.add(btnLiberarMesa);
+		
+		//Añadimos el panel botones
+		
+		panelEast.add(panelBotones,BorderLayout.SOUTH);
+		
+	
 		//Funcion para actualizar los colores
 		
 		actualizarColores();
@@ -128,16 +171,22 @@ public class PanelMesas extends JPanel {
 
 		btnLiberarMesa.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
 			}
 		});
+		//Boton generar nueva orden
 		btnNewOrden.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ventanaMain.navegarA("ORDEN");
+	
+				ventanaMain.mostrarMenu(false);
+				ventanaMain.ordenando(mesaSelect);
 			}
 		});
 
 
 	}
+
+	
 	public void setVentanaMain(VentanaMain ventanaMain) {
 		this.ventanaMain=ventanaMain;
 	}
@@ -149,9 +198,8 @@ public class PanelMesas extends JPanel {
 	
 			switch (estaMesa.getEstadoMesa()) {
 			case LIBRE:
-				botones[i].setBackground(new Color(136,231,136)); //Verde
+				botones[i].setBackground(new Color(8,51,162)); //Azul rey
 				break;
-
 			case ESPERANDO: //Ya se ocupo y se tomo su pedido 
 				botones[i].setBackground(new Color(255,255,0));//Amarillo
 				break;
@@ -164,6 +212,15 @@ public class PanelMesas extends JPanel {
 		
 	
 	}
+	private void estilizarBotonAccion(JButton btn, Color colorFondo) {
+        btn.setPreferredSize(new Dimension(100, 45));
+        btn.setBackground(colorFondo);
+        btn.setForeground(Color.WHITE);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
 	//En este video seguiremos con el codigo de panel de mesas, mi objetivo es que traspasemos los datos de la base de datos a nuestro codigo
 	//Hare una clase de mesas, le seguiremos en otro video
 	
