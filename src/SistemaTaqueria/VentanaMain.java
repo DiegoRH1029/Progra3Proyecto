@@ -234,9 +234,9 @@ public class VentanaMain extends JFrame {
     	
         cardLayout.show(panelContenedor, panel);
    }
-    public void ordenando(int mesaSelect) {
-    	Mesa mesa = new Mesa(mesaSelect);
-    	panelOrden.setMesa(mesa);
+    public void ordenando(int mesaSelect,boolean modoEdicion) {
+    	Mesa mesa = ControladorMesa.getMesa(mesaSelect);
+    	panelOrden.setMesa(mesa,modoEdicion);
     	navegarA("ORDEN");
     }
 

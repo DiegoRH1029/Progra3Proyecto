@@ -12,7 +12,7 @@ public class Persona {
 	public Persona(String nombre, int ind) {
 		super();
 		this.nombre = nombre;
-		this.ind=ind;
+		this.setInd(ind);
 	}
 	
 	
@@ -20,7 +20,7 @@ public class Persona {
 	public Persona(String nombre, int ind, ArrayList<Producto> listaProductos) {
 		super();
 		this.nombre = nombre;
-		this.ind = ind;
+		this.setInd(ind);
 		this.listaProductos = listaProductos;
 	}
 
@@ -42,7 +42,26 @@ public class Persona {
 	public void addProduct(Producto p) {
 		listaProductos.add(p);
 	}
-	
+
+
+
+	public int getInd() {
+		return ind;
+	}
+
+
+
+	public void setInd(int ind) {
+		this.ind = ind;
+	}
+	public double getTotalPersona() {
+		double totalPersona=0.0;
+		if(listaProductos==null||listaProductos.isEmpty())return 0.0;
+		for(Producto prod : listaProductos) {
+			totalPersona+=prod.getPrecioTotal();
+		}
+		return totalPersona;
+	}
 	
 	
 }

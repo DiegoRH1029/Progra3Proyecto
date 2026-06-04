@@ -8,11 +8,14 @@ public class Bebida extends Producto{
 		super(producto, cant, precio, notas, conQueso);
 		this.nombreBebida = nombreBebida;
 	}
-
+	@Override 
+	public Producto clonarProd() {
+		return new Bebida(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.nombreBebida);
+	}
 	@Override 
 	
 	public String toString() {
-		String strRet =super.getCant()+" "+ nombreBebida;
+		String strRet =nombreBebida;
 		return strRet;
 	}
 }

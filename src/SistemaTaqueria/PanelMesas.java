@@ -32,12 +32,13 @@ public class PanelMesas extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 	private VentanaMain ventanaMain;
-	private JButton[] botones=new JButton[12]; //Mejor uso un vector de botones ya que es fijo
+	private static JButton[] botones=new JButton[12]; //Mejor uso un vector de botones ya que es fijo
 	private int mesaSelect;
 	private Color grisDark = new Color(30,30,30);
 	private JButton btnNewOrden;
 	private JButton btnLiberarMesa;
 	private JButton btnEditarOrden;
+	private JTextArea textMesa;
 	
 
 	/**
@@ -85,7 +86,8 @@ public class PanelMesas extends JPanel {
 			botones[i].addActionListener(new ActionListener() { //Hacemos un action listener para cada boton, al fin y al cabo solo obtenemos su numero
 				public void actionPerformed(ActionEvent e) {
 					EstadoMesa estado = ControladorMesa.getEstadoMesa(num);
-					mesaSelect =num;
+					mesaSelect = num;
+					Mesa mesaActual=ControladorMesa.getMesa(num);
 					switch (estado) {
 					case LIBRE:
 						btnNewOrden.setVisible(true);
@@ -96,12 +98,16 @@ public class PanelMesas extends JPanel {
 						btnNewOrden.setVisible(false);
 						btnEditarOrden.setVisible(true);
 						btnLiberarMesa.setVisible(true);
+						break;
 					case ESPERANDO:
 						btnNewOrden.setVisible(false);
 						btnEditarOrden.setVisible(true);
 						btnLiberarMesa.setVisible(true);
+						break;
+						
 					}
 					labelMesaActual.setText("Mesa "+num);
+					mostrarDetallesMesas(mesaActual);
 					
 					
 				}
@@ -112,7 +118,7 @@ public class PanelMesas extends JPanel {
 		
 	
 		//Text area (donde se imprimira el ticket
-		JTextArea textMesa = new JTextArea();
+		textMesa = new JTextArea();
 		textMesa.setEditable(false);
 		textMesa.setBackground(new Color(60,60,60));
 		textMesa.setForeground(Color.white);
@@ -163,9 +169,11 @@ public class PanelMesas extends JPanel {
 
 		
 		//Botones orden 
+		//Boton de editar orden, podra añadir/modiciar/eliminar productos, haremos ajustes en el panel de ordenes
 		btnEditarOrden.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+				ventanaMain.mostrarMenu(false);
+				ventanaMain.ordenando(mesaSelect,true);//modo edicion = true;
 			}
 		});
 
@@ -177,9 +185,8 @@ public class PanelMesas extends JPanel {
 		//Boton generar nueva orden
 		btnNewOrden.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-	
 				ventanaMain.mostrarMenu(false);
-				ventanaMain.ordenando(mesaSelect);
+				ventanaMain.ordenando(mesaSelect,false);
 			}
 		});
 
@@ -190,8 +197,36 @@ public class PanelMesas extends JPanel {
 	public void setVentanaMain(VentanaMain ventanaMain) {
 		this.ventanaMain=ventanaMain;
 	}
-	
-	public void actualizarColores() {
+	//En esta funcion lo que se hara es actualizar el texto de la mesa para ver un resumen de la orden actual de esa mesa
+	private void mostrarDetallesMesas(Mesa mesaGuard) {
+		textMesa.setText(""); //Se limpia antes de imprimir algo nuevi
+		if(mesaGuard==null||mesaGuard.getPersonas().isEmpty()) {
+			textMesa.setText("Mesa libre\nSelecciona Generar orden");
+			return;
+		}
+		double totalMesa=0.0; //Para la cuenta total;
+		for(Persona p : mesaGuard.getPersonas()) {
+			textMesa.append("---"+p.getNombre()+" ---\n");
+			double totalPersona=p.getTotalPersona();//este es el total por persona 
+			//Ahora sacamos los productos(string)
+			for(Producto prod :p.getListaProductos()) {
+				String desc = prod.toString();
+				if(desc==null) desc="Error nombre";
+				else if(desc.length()>20) {
+					desc=desc.substring(0,18)+"..";//Si sobrepasa los 20 caracteres se escribe ..
+				}
+				String linea = String.format("%-3d %-20s $%6.2f\n", prod.getCant(), desc, prod.getPrecioTotal());
+				textMesa.append(linea);
+			}
+			textMesa.append(String.format("%-24s $%6.2f\n\n","Total" +p.getNombre()+ ": ", totalPersona));
+			totalMesa+=totalPersona;
+		}
+		textMesa.append("============================\n");
+		textMesa.append(String.format("%-24s $%6.2f\n","Total mesa: ", totalMesa));
+		
+	}
+
+	public static void actualizarColores() {
 		List <Mesa> listaMesa = ControladorMesa.generarListaMesas(); //Sacamos la lista de las mesas de la base de datos
 		int i=0;
 		for(Mesa estaMesa : listaMesa) {

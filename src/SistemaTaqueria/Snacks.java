@@ -11,6 +11,7 @@ public class Snacks extends Producto{
 		this.extrasSnacks = extrasSnacks;
 	}
 
+
 	public String getExtrasSnacks() {
 		return extrasSnacks;
 	}
@@ -20,9 +21,13 @@ public class Snacks extends Producto{
 	}
 	
 	@Override 
-	
+	public Producto clonarProd() {
+		return new Snacks(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.extrasSnacks);
+	}
+	@Override 
 	public String toString() {
-		String strRet = super.toString() +" "+ this.extrasSnacks;
-		return strRet;
+
+	    String strRet = super.toString() +" "+ this.extrasSnacks;
+		return strRet.replaceAll(" +"," ").trim();
 	}
 }

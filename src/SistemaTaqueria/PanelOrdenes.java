@@ -6,8 +6,13 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.awt.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.awt.event.ActionEvent;
 
 public class PanelOrdenes extends JPanel {
@@ -15,23 +20,41 @@ public class PanelOrdenes extends JPanel {
     private static final long serialVersionUID = 1L;
     private VentanaMain ventanaMain;
    
-    private static int contPer=1;
-    private String nombreActual;
+    private static int contPer=0;
+    private String nombreActual = "Persona "+(contPer+1);
     // Grupos de botones para que solo se pueda seleccionar una opción por columna
     private ButtonGroup grupoCantidad;
     private ButtonGroup grupoProducto;
     private ButtonGroup grupoCarne;
     private ButtonGroup grupoConTodo;
+    private JRadioButton rbTacos;
+    private JRadioButton rbCant1;
+    private JRadioButton rbPastor;
     private JTextField textExtras;
     private JTextField textFieldCantidad;
+    JScrollPane scrollTicket;
     private ArrayList<Producto> listaProductos;
     private Mesa mesa;
+    private String numMesa="";
     private boolean esSnack;
     private boolean esBebida;
     private boolean cantText;
-
+    private JComboBox<String> comboRefrescosGrande;
+    private JComboBox<String> comboRefrescosChicos;
+    private JComboBox<String> comboAguas1L;
+    private JComboBox<String> comboAguasMedioL;
     private JRadioButton rbBurger;
     private JRadioButton rbHotDogs;
+    private JCheckBox chkConQueso;
+    private JCheckBox chkSinAderezo;
+    private JCheckBox chkSinVerduras;
+    //Lista de productos grafico
+    private DefaultListModel<String> modeloTicket;
+    private JList<String> listaTicket;
+    //haremos un combobox para navegar entre personas
+    private JComboBox<String> comboPersonas;
+    private JButton btnEliminarProducto; //Por si se quiere eliminar producto seleccionado
+    private boolean modoEdicion =false; //Bandera para controlar si estamos generando o modificando
 
     public PanelOrdenes() {
     	listaProductos = new ArrayList<>();
@@ -55,7 +78,7 @@ public class PanelOrdenes extends JPanel {
         panelCantidad.setLayout(new BoxLayout(panelCantidad, BoxLayout.Y_AXIS));
         grupoCantidad = new ButtonGroup();
         
-        JRadioButton rbCant1 = new JRadioButton("1");
+        rbCant1 = new JRadioButton("1");
         JRadioButton rbCant2 = new JRadioButton("2");
         JRadioButton rbCant3 = new JRadioButton("3");
         JRadioButton rbCant4 = new JRadioButton("4");
@@ -110,7 +133,7 @@ public class PanelOrdenes extends JPanel {
         panelProducto.setLayout(new BoxLayout(panelProducto, BoxLayout.Y_AXIS));
         grupoProducto = new ButtonGroup();
         
-        JRadioButton rbTacos = new JRadioButton("Tacos");
+        rbTacos = new JRadioButton("Tacos");
         JRadioButton rbTortas = new JRadioButton("Tortas");
         JRadioButton rbQuesadillas = new JRadioButton("Quesadillas");
         JRadioButton rbBurros = new JRadioButton("Burros");
@@ -144,14 +167,14 @@ public class PanelOrdenes extends JPanel {
         String [] saboresRefrescosChico = {"Coca","Coca Vidrio","Fanta","Sprite","Mundet"};
         String[] saboresAguasMedioL = {"Horchata","Jamaica","Mango"};
         //Lista desplegable
-        JComboBox<String> comboRefrescosGrande = new JComboBox<>(saboresRefrescosGrande);
+        comboRefrescosGrande = new JComboBox<>(saboresRefrescosGrande);
         comboRefrescosGrande.setMaximumSize(new Dimension(700, 20));
-        JComboBox<String> comboRefrescosChicos = new JComboBox<>(saboresRefrescosChico);
+        comboRefrescosChicos = new JComboBox<>(saboresRefrescosChico);
         comboRefrescosChicos.setAutoscrolls(true);
         comboRefrescosChicos.setMaximumSize(new Dimension(700, 20));
-        JComboBox<String> comboAguas1L = new JComboBox<>(saboresAguas1L);
+        comboAguas1L = new JComboBox<>(saboresAguas1L);
         comboAguas1L.setMaximumSize(new Dimension(700, 20));
-        JComboBox<String> comboAguasMedioL = new JComboBox<>(saboresAguasMedioL);
+        comboAguasMedioL = new JComboBox<>(saboresAguasMedioL);
         comboAguasMedioL.setMaximumSize(new Dimension(700, 20));
         //Las agregamos al panel de productos 
         //Las estilizamos
@@ -185,7 +208,7 @@ public class PanelOrdenes extends JPanel {
         panelCarne.setLayout(new BoxLayout(panelCarne, BoxLayout.Y_AXIS));
         grupoCarne = new ButtonGroup();
         
-        JRadioButton rbPastor = new JRadioButton("Pastor");
+        rbPastor = new JRadioButton("Pastor");
         JRadioButton rbBisteck = new JRadioButton("Bisteck");
         JRadioButton rbChorizo = new JRadioButton("Chorizo");
         JRadioButton rbBirria = new JRadioButton("Birria");
@@ -207,9 +230,9 @@ public class PanelOrdenes extends JPanel {
         grupoConTodo = new ButtonGroup();
         
         // Independientes (CheckBoxes)
-        JCheckBox chkConQueso = new JCheckBox("Con queso");
-        JCheckBox chkSinAderezo = new JCheckBox("Sin aderezos");
-        JCheckBox chkSinVerduras = new JCheckBox("Sin Verduras");
+        chkConQueso = new JCheckBox("Con queso");
+        chkSinAderezo = new JCheckBox("Sin aderezos");
+        chkSinVerduras = new JCheckBox("Sin Verduras");
         
         // Grupo de Verduras (RadioButtons)
         JRadioButton rbConTodo = new JRadioButton("Con todo");
@@ -250,53 +273,64 @@ public class PanelOrdenes extends JPanel {
         // =========================================================
         JPanel panelDerecho = new JPanel();
         panelDerecho.setBackground(new Color(30, 30, 30));
-        panelDerecho.setPreferredSize(new Dimension(350, 0));
+        panelDerecho.setPreferredSize(new Dimension(400, 0));
         panelDerecho.setLayout(new BorderLayout(0, 15));
         add(panelDerecho, BorderLayout.EAST);
 
 
                
         // Área de texto para el ticket
-        JTextArea areaTicket = new JTextArea();
-        areaTicket.setEditable(false); 
-        areaTicket.setBackground(new Color(60, 60, 60)); // Fondo oscuro
-        areaTicket.setForeground(Color.WHITE); // Texto blanco
-        areaTicket.setFont(new Font("Monospaced", Font.PLAIN, 15));
-        areaTicket.setBorder(new EmptyBorder(10, 10, 10, 10));
-        
-        JScrollPane scrollTicket = new JScrollPane(areaTicket);
-        scrollTicket.setBorder(crearBordeOscuro("Persona "+contPer));
+        //Reemplazamos al text area por una lista
+        comboPersonas = new JComboBox<>();
+        comboPersonas.setBackground(new Color(60,60,60));
+        comboPersonas.setForeground(Color.WHITE);
+        comboPersonas.setFont(new Font("Segoe UI", Font.BOLD,14));
+        //añadimos la persona 
+        comboPersonas.addItem(nombreActual);
+        panelDerecho.add(comboPersonas,BorderLayout.NORTH);
+        //ahora la lista
+        modeloTicket = new DefaultListModel<>();
+        listaTicket = new JList<>(modeloTicket);
+        listaTicket.setBackground(new Color(60,60,60));
+        listaTicket.setForeground(Color.WHITE);
+        listaTicket.setFont(new Font("Monospaced", Font.PLAIN,15));
+        listaTicket.setSelectionBackground(new Color(8,51,161));//azul cuando se selecciona
+        listaTicket.setSelectionForeground(Color.WHITE);
+
+        scrollTicket = new JScrollPane(listaTicket);
+        scrollTicket.setBorder(crearBordeOscuro(nombreActual));
         scrollTicket.getViewport().setBackground(new Color(45, 45, 45)); // Quita bordes blancos del scroll
         panelDerecho.add(scrollTicket, BorderLayout.CENTER);
-
+        
         // Sub-panel inferior para los botones de acción
         JPanel panelBotonesAccion = new JPanel();
         panelBotonesAccion.setBackground(new Color(30, 30, 30));
-        panelBotonesAccion.setLayout(new GridLayout(5, 1, 0, 10)); 
+        panelBotonesAccion.setLayout(new GridLayout(4, 2, 10, 10)); 
 
+        btnEliminarProducto = new JButton("Eliminar seleccion");
+        JButton btnActualizarProducto = new JButton("Actualizar seleccion");
         JButton btnAnadirProducto = new JButton("Añadir Producto");
         JButton btnTerminarPersona = new JButton("Terminar orden persona +");
         JButton btnRegresar = new JButton("Regresar a Mesas");
         JButton btnFinalizar = new JButton("Finalizar Pedido Total");
         JButton editarNombre = new JButton("Editar nombre");
 
-
-        
-        
-  
         // Pintamos los botones con la misma lógica que en mesas
         estilizarBoton(btnAnadirProducto, new Color(46, 204, 113), Color.WHITE); // Verde
         estilizarBoton(btnTerminarPersona, new Color(255, 193, 7), Color.BLACK); // Amarillo
         estilizarBoton(btnRegresar, new Color(100, 100, 100), Color.WHITE);      // Gris
         estilizarBoton(btnFinalizar, new Color(211, 47, 47), Color.WHITE);       // Rojo
         estilizarBoton(editarNombre, new Color(8,51,162), Color.WHITE);       // azul
-      
+        estilizarBoton(btnEliminarProducto,new Color(232, 75, 60), Color.WHITE); //Rojo mas oscuro
+        estilizarBoton(btnActualizarProducto,new Color(20, 200, 100), Color.WHITE); //verde?
         
         panelBotonesAccion.add(btnAnadirProducto);
-        panelBotonesAccion.add(btnTerminarPersona);
-        panelBotonesAccion.add(btnRegresar);
-        panelBotonesAccion.add(btnFinalizar);
+        panelBotonesAccion.add(btnActualizarProducto);
+        panelBotonesAccion.add(btnEliminarProducto);
         panelBotonesAccion.add(editarNombre);
+        panelBotonesAccion.add(btnTerminarPersona);
+        panelBotonesAccion.add(btnFinalizar);
+        panelBotonesAccion.add(btnRegresar);
  
         
         panelDerecho.add(panelBotonesAccion, BorderLayout.SOUTH);
@@ -346,8 +380,90 @@ public class PanelOrdenes extends JPanel {
             }
         });
         //Finaliza la orden total de la mesa
+        //Cuando se finaliza el pedido total es cuando se actualiza la base de datos 
+        //Agarraremos a todas las personas de la mesa, y llenaremos todas las tablas de base de datos con la nueva orden y actualizaremos el inventario
+        //Añadimos de que en modo edicion se actualicen las tablas (o borre completamente las anteriores y metamos nuevas)
         btnFinalizar.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		//Verificamos que la mesa no este vacia o que no tenga personas
+        		if(mesa == null|| mesa.getPersonas().isEmpty()) {
+        			JOptionPane.showMessageDialog(null, "No existen mesas o no hay personas", "!", JOptionPane.ERROR_MESSAGE);
+        			return;
+        		}
+        		Connection con=null;
+        		try {
+        			con=ConexionBD.obtenerConexion();
+        			con.setAutoCommit(false);//Esto es para que solo se actualice al final
+        			//Si esta en modo edicion se borra la cuenta anterior de la base de datos antes de añadir la nueva orden
+        			if(modoEdicion) {
+        				String sqlDelete = "DELETE FROM cuentas WHERE idMesa = ?";
+            			PreparedStatement psDelete =  con.prepareStatement(sqlDelete);
+            			psDelete.setInt(1, mesa.getNumMesa());
+            			psDelete.executeUpdate();
+        			}
+        			//Creamos una cuenta
+        			String sqlCuenta = "INSERT INTO cuentas (idMesa) VALUES(?)";
+        			PreparedStatement psCuenta =  con.prepareStatement(sqlCuenta,java.sql.Statement.RETURN_GENERATED_KEYS);
+        			psCuenta.setInt(1, mesa.getNumMesa());
+        			psCuenta.executeUpdate();
+        			
+        			ResultSet rsCuenta= psCuenta.getGeneratedKeys();
+        			int idCuenta=0;
+        			if(rsCuenta.next())idCuenta=rsCuenta.getInt(1);
+        			String sqlPersona="INSERT INTO personas (idCuenta,nombre) VALUES(?,?)";
+        			PreparedStatement psPersona =  con.prepareStatement(sqlPersona,java.sql.Statement.RETURN_GENERATED_KEYS);
+        			
+        			String sqlPedido = "INSERT INTO pedidos (idPersona,cantidad, producto,precio) VALUES (?,?,?,?)";
+        			PreparedStatement psPedido =  con.prepareStatement(sqlPedido);
+        			
+        			//Personas y productos 
+        			for(Persona p: mesa.getPersonas()) {
+        				psPersona.setInt(1, idCuenta);
+        				psPersona.setString(2, p.getNombre());
+        				psPersona.executeUpdate();
+        				
+        				ResultSet rsPersona = psPersona.getGeneratedKeys();
+        				int idPersona=0;
+        				if(rsPersona.next()) idPersona=rsPersona.getInt(1);
+        				
+        				for(Producto prod:p.getListaProductos()) {
+        					psPedido.setInt(1, idPersona);
+        					psPedido.setInt(2, prod.getCant());
+        					psPedido.setString(3, prod.toString());
+        					psPedido.setDouble(4, prod.getPrecioTotal());
+        					psPedido.executeUpdate();
+        				}
+        			}
+        			//Actualizamos el estado de la mesa despues de guardar la orden
+        			String sqlEstado = "UPDATE mesas SET estado = 'Esperando' WHERE idMesa = ?";
+        			PreparedStatement psEstado =  con.prepareStatement(sqlEstado);
+        			psEstado.setInt(1, mesa.getNumMesa());
+        			psEstado.executeUpdate();
+        			//Confirmamos la actualizacion
+        			con.commit();
+        			JOptionPane.showMessageDialog(null, "Orden de la mesa "+mesa.getNumMesa()+" añadida con exito a la base de datos", "Actu BD", JOptionPane.INFORMATION_MESSAGE);	
+        			//Limpiamos todo lo de la pantalla para la siguiente orden 
+        			limpiarTodo();
+        			//Nos regresamos a mesas
+        			if(ventanaMain!=null) {
+        				ventanaMain.mostrarMenu(true);
+        				PanelMesas.actualizarColores();
+        				ventanaMain.navegarA("MESAS");
+        			}
+        		}catch(SQLException ex1) {
+        			ex1.printStackTrace();
+        			//en caso de que falle cancelamos la conexion y hacemos rollback
+        			try {
+        				if(con!=null) con.rollback();
+        				
+        			}catch(SQLException ex2) {
+        			}
+        			JOptionPane.showMessageDialog(null, "Ocurrio un error, base de datos restaurada", "Error", JOptionPane.INFORMATION_MESSAGE);
+        		}finally {
+        			try {
+        				if(con!=null)con.close();
+        			}catch(SQLException ex3) {}
+        		}
         	}
         });
         
@@ -374,16 +490,17 @@ public class PanelOrdenes extends JPanel {
         		}
         		int cant = Integer.parseInt(canStr);
         		double precio = InventarioDB.getPrecio(prodStr);
+        		boolean conQueso = chkConQueso.isSelected();
+        		if((prodStr.equals("Torta")||prodStr.equals("Tacos"))&&conQueso) precio+=InventarioDB.getPrecio("Queso");
 	        	if((InventarioDB.estaDisponible(prodStr)&&InventarioDB.validarStockMemoria(prodStr, cant))) {
 	        		if(esBebida) {
 	
 	        			Bebida b = new Bebida(obtenerSeleccion(grupoProducto),cant,precio,"",false,prodStr);
 	        			listaProductos.add(b);
-	        			areaTicket.append(listaProductos.getLast().toString()+"\n");
 	        		}
 	        		else {
 	            		String notas = textExtras.getText(); 
-	            		boolean conQueso = chkConQueso.isSelected();
+	        
 	            		if(!esSnack) {
 	        
 	            			String carneStr = obtenerSeleccion(grupoCarne); 
@@ -391,7 +508,6 @@ public class PanelOrdenes extends JPanel {
 	            				String extrasStr = obtenerSeleccion(grupoConTodo);
 		            			Antojitos antoj = new Antojitos(prodStr,cant,precio,notas,conQueso,carneStr,extrasStr);
 		            			listaProductos.add(antoj);
-		            			areaTicket.append(listaProductos.getLast().toString()+"\n");
 	            			}
 	            			else {
 	            				JOptionPane.showMessageDialog(null, "El "+carneStr+" se acabo", "Sin disponibilidad", JOptionPane.ERROR_MESSAGE);
@@ -404,20 +520,133 @@ public class PanelOrdenes extends JPanel {
 	            			if(chkSinVerduras.isSelected()) extraSnacks+="Sin Verdura";
 	            			Snacks snack = new Snacks(prodStr,cant,precio,notas,conQueso,extraSnacks);
 	            			listaProductos.add(snack);
-	            			areaTicket.append(listaProductos.getLast().toString()+"\n");
 	            		}
 	        		}
+	        		Producto ultimoProd = listaProductos.getLast();
+	        		String desc = ultimoProd.toString();
+	        		if (desc.length() > 20) {
+	        		    desc = desc.substring(0, 18) + "..";
+	        		}
+	        		String lineaTicket = String.format("%-3d %-20s $%6.2f\n", ultimoProd.getCant(), desc, ultimoProd.getPrecioTotal());
+
+	        		modeloTicket.addElement(lineaTicket);
+	        		limpiarTodo();
 	        	}else {JOptionPane.showMessageDialog(null, "El producto no esta disponible", "Sin disponibilidad", JOptionPane.ERROR_MESSAGE);}
         	}
         });
-        
+        //Boton que elimina producto seleccionado
+        //Agarra el indice del producto seleccionado en la lista y lo elimina
+        btnEliminarProducto.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		int ind = listaTicket.getSelectedIndex();
+        		if(ind!=-1) {
+        			if(JOptionPane.showConfirmDialog(null,"Desea eliminar este producto?"+listaProductos.get(ind).toString(),"Seguro?",JOptionPane.YES_NO_CANCEL_OPTION)==JOptionPane.YES_OPTION) {
+        				listaProductos.remove(ind);
+        				modeloTicket.remove(ind);
+        			}
+        			else {
+        				JOptionPane.showMessageDialog(null, "Operacion cancelada", "Cancelado", JOptionPane.ERROR_MESSAGE);
+        			}
+
+        		}
+        		else {
+        			JOptionPane.showMessageDialog(null, "Primero selecciona un producto", "Error", JOptionPane.ERROR_MESSAGE);
+        		}
+        	}
+        });
+        btnActualizarProducto.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		int ind = listaTicket.getSelectedIndex();
+        		if(ind==-1) {
+        			JOptionPane.showMessageDialog(null, "Selecciona un producto", "Error", JOptionPane.ERROR_MESSAGE);
+        			return;
+        		}
+        		String prodStr="";
+        		String canStr ="";
+        		if(textFieldCantidad.getText().equals("")) {
+        			canStr = obtenerSeleccion(grupoCantidad);
+        		}else canStr=textFieldCantidad.getText();
+   
+				if(esBebida) {
+        			
+        			String bebida="";
+        			if(rbRefrescoGrande.isSelected())bebida=(String)comboRefrescosGrande.getSelectedItem()+ " 600ml";
+        			else if(rbRefrescoChico.isSelected())bebida=(String)comboRefrescosChicos.getSelectedItem()+ " 350ml";
+        			else if(rbAguas1L.isSelected())bebida = (String)comboAguas1L.getSelectedItem() +" 1L";
+        			else if(rbAguasMedioL.isSelected())bebida=(String)comboAguasMedioL.getSelectedItem()+" medioL";
+        			prodStr = bebida;
+        		}
+        		else {
+        			prodStr = obtenerSeleccion(grupoProducto);
+        		}
+        		int cant = Integer.parseInt(canStr);
+        		double precio = InventarioDB.getPrecio(prodStr);
+        		boolean conQueso = chkConQueso.isSelected();
+        		if((prodStr.equals("Torta")||prodStr.equals("Tacos"))&&conQueso) precio+=InventarioDB.getPrecio("Queso");
+	        	if((InventarioDB.estaDisponible(prodStr)&&InventarioDB.validarStockMemoria(prodStr, cant))) {
+	        		if(esBebida) {
+	
+	        			Bebida b = new Bebida(obtenerSeleccion(grupoProducto),cant,precio,"",false,prodStr);
+	        			listaProductos.set(ind,b);
+	        		}
+	        		else {
+	            		String notas = textExtras.getText(); 
+	        
+	            		if(!esSnack) {
+	        
+	            			String carneStr = obtenerSeleccion(grupoCarne); 
+	            			if(InventarioDB.estaDisponible(carneStr)) {
+	            				String extrasStr = obtenerSeleccion(grupoConTodo);
+		            			Antojitos antoj = new Antojitos(prodStr,cant,precio,notas,conQueso,carneStr,extrasStr);
+		            			listaProductos.set(ind,antoj);
+	            			}
+	            			else {
+	            				JOptionPane.showMessageDialog(null, "El "+carneStr+" se acabo", "Sin disponibilidad", JOptionPane.ERROR_MESSAGE);
+	            			}
+	            			
+	            		}
+	            		else {
+	            			String extraSnacks = "" ;
+	            			if(chkSinAderezo.isSelected()) extraSnacks+="Sin aderezo";
+	            			if(chkSinVerduras.isSelected()) extraSnacks+="Sin Verdura";
+	            			Snacks snack = new Snacks(prodStr,cant,precio,notas,conQueso,extraSnacks);
+	            			listaProductos.set(ind,snack);
+	            		}
+	        		}
+	        		Producto actuProd = listaProductos.get(ind);
+	        		String desc = actuProd.toString();
+	        		if (desc.length() > 20) {
+	        		    desc = desc.substring(0, 18) + "..";
+	        		}
+	        		String lineaTicket = String.format("%-3d %-20s $%6.2f\n", actuProd.getCant(), desc, actuProd.getPrecioTotal());
+
+	        		modeloTicket.set(ind,lineaTicket);
+	        		JOptionPane.showMessageDialog(null, "Producto actualizado", "Succesfull", JOptionPane.INFORMATION_MESSAGE);
+	        		limpiarTodo();
+	        	}else {JOptionPane.showMessageDialog(null, "El producto no esta disponible", "Sin disponibilidad", JOptionPane.ERROR_MESSAGE);}
+        	}
+        });
         //Termina la orden para esa persona
         btnTerminarPersona.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		Persona p = new Persona(nombreActual, contPer, listaProductos);
-        		mesa.addPersona(p);
-        		listaProductos.clear();
-        		
+        		if(listaProductos.isEmpty()) {
+        			JOptionPane.showMessageDialog(null, "Aun no añades ningun producto", "Orden vacia", JOptionPane.INFORMATION_MESSAGE);
+        		}
+        		else {
+               		ArrayList<Producto> listaNueva = new ArrayList<>();
+            		for(Producto prod:listaProductos) {
+            			listaNueva.add(prod.clonarProd());
+            		}
+            		Persona p = new Persona(nombreActual, contPer, listaNueva);
+            		mesa.addPersona(p);
+            		JOptionPane.showMessageDialog(null, "Persona "+nombreActual+" añadida con exito", "Persona", JOptionPane.INFORMATION_MESSAGE);
+              		contPer++;
+              		nombreActual="Persona"+(contPer+1);
+              		comboPersonas.addItem(nombreActual);
+              		scrollTicket.setBorder(crearBordeOscuro(nombreActual));
+            		modeloTicket.clear();
+            		listaProductos.clear();	
+        		}
         	}
         });
         editarNombre.addActionListener(new ActionListener() {
@@ -533,17 +762,143 @@ public class PanelOrdenes extends JPanel {
         		}
         	}
         });
+        //Añadimos un action listenes, para que si el mesero toca un producto pueda ver la orden graficamente
+        listaTicket.addListSelectionListener(new javax.swing.event.ListSelectionListener(){
+        	public void valueChanged(javax.swing.event.ListSelectionEvent e) {
+        			if(e.getValueIsAdjusting()) {//Evita que se active mas de una vez
+        				int ind = listaTicket.getSelectedIndex();
+        				if(ind!=-1&&!listaProductos.isEmpty()) {
+        					Producto p = listaProductos.get(ind);
+        					cargarDatosInterfaz(p);
+        				}
+        			}
+        	}
+
+
+        });
+        //Ahora vamos añadir que al navegar entre personas podamos ver la lista de productos de cada persona
+        comboPersonas.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		int ind = comboPersonas.getSelectedIndex();
+        		//Verificmos si ya hay mesa o no y si tiene personas)
+        		if(ind!=-1&&mesa!=null) {
+        			nombreActual=(String) comboPersonas.getSelectedItem();
+        			scrollTicket.setBorder(crearBordeOscuro(nombreActual));
+        			//Si es una persona existente
+        			if(ind<mesa.getPersonas().size()) {
+        				Persona pSelect=mesa.getPersonas().get(ind);
+        				listaProductos=pSelect.getListaProductos();
+        				modeloTicket.clear();
+        				for(Producto prod : listaProductos) {
+	        				String desc = prod.toString();
+	    	        		if (desc.length() > 20) {
+	    	        		    desc = desc.substring(0, 18) + "..";
+    	        		}
+    	        		String lineaTicket = String.format("%-3d %-20s $%6.2f\n", prod.getCant(), desc, prod.getPrecioTotal());
+    	        		modeloTicket.addElement(lineaTicket);
+            			//Seleccionamos el primer producto en automatico
+            			if(!modeloTicket.isEmpty())listaTicket.setSelectedIndex(0);
+        				}
+        			}else {
+            			listaProductos=new ArrayList<>();
+            			modeloTicket.clear();
+        			}
+        			
+        		}
+
+        	}
+        });
        
     }
-
+	//Getters setters
     public void setVentanaMain(VentanaMain ventanaMain){
         this.ventanaMain = ventanaMain;
     }
-	//Getters setters
-	public void setMesa(Mesa mesa) {
-		this.mesa=mesa;
-	}
 
+    //Actualizamos set mesa para que sea capaz de entrar en modo edicion
+	public void setMesa(Mesa mesa,boolean modoEdicion) {
+		this.mesa=mesa;
+		this.numMesa=""+mesa.getNumMesa();
+		this.modoEdicion = modoEdicion;
+		//Si entremos en modo edicion se limpia todo por si acaso
+		comboPersonas.removeAllItems();
+		modeloTicket.clear();
+		listaProductos.clear();
+		if(modoEdicion && !mesa.getPersonas().isEmpty()) {
+			//Si es modo edicion cargamos a las personas que estan en la memoria
+			contPer=mesa.getPersonas().size();
+			for(Persona p : mesa.getPersonas()) {
+				comboPersonas.addItem(p.getNombre());
+			}
+			//Preparamos nombre para la siguiente persona que añadira
+			nombreActual="Persona"+(contPer+1);
+			comboPersonas.addItem(nombreActual);
+			comboPersonas.setSelectedItem(nombreActual);
+		}else {
+			contPer=0;
+			nombreActual="Persona 1";
+			comboPersonas.addItem(nombreActual);
+		}
+		
+		scrollTicket.setBorder(crearBordeOscuro(nombreActual));
+	}
+	//Para no preguntar bootn por boton hare funcioon auxiluar que hace clik en un boton y lo busca en grupos
+	public void hacerClicEn(ButtonGroup grupo,String textoBoton) {
+        for(Enumeration<AbstractButton> boton = grupo.getElements(); boton.hasMoreElements();) {
+            AbstractButton b = boton.nextElement(); 
+            if(b.getText().equalsIgnoreCase(textoBoton)) {
+            	b.doClick();
+            	return;
+            }
+            
+        }
+	}
+	//Haremos una funcion que nos ayudara a editar una orden
+	//Lo que hara es en base al texto del producto seleccionaeremos las cosas en la interfaz (la recreamos)
+	public void cargarDatosInterfaz(Producto p) {
+		//Cargamos la cantidad
+		textFieldCantidad.setText(String.valueOf(p.getCant()));
+		rbCant1.doClick();
+		//Pasamos todo el texto a minusculas para buscar facilmente
+		String desc = p.toString().toLowerCase();
+		//Buscamos el producto
+		if(desc.contains("tacos")) hacerClicEn(grupoProducto,"Tacos");
+		else if(desc.contains("tortas")) hacerClicEn(grupoProducto,"Tortas");
+		else if(desc.contains("ques")) hacerClicEn(grupoProducto,"Quesadillas");
+		else if(desc.contains("burros")) hacerClicEn(grupoProducto,"Burros");
+		else if(desc.contains("volvanes")) hacerClicEn(grupoProducto,"Volcanes");
+		else if(desc.contains("burg")) hacerClicEn(grupoProducto,"Hamburguesa");
+		else if(desc.contains("hotdog")) hacerClicEn(grupoProducto,"HotDogs");
+		
+		// (Bebidas)
+	    else if (desc.contains("600ml")) hacerClicEn(grupoProducto, "Refresco 600ml");
+	    else if (desc.contains("350ml")) hacerClicEn(grupoProducto, "Refresco 350ml");
+	    else if (desc.contains("1l")) hacerClicEn(grupoProducto, "Aguas 1L");
+	    else if (desc.contains("mediol")) hacerClicEn(grupoProducto, "Aguas MedioL");
+
+	    // 3. ADIVINAMOS LA CARNE (Revisamos tu abreviatura " p " y damos clic al botón "Pastor")
+	    if (desc.contains(" p ") || desc.contains("pastor")) hacerClicEn(grupoCarne, "Pastor");
+	    else if (desc.contains(" bis ")) hacerClicEn(grupoCarne, "Bisteck");
+	    else if (desc.contains(" cho ")) hacerClicEn(grupoCarne, "Chorizo");
+	    else if (desc.contains(" bir ")) hacerClicEn(grupoCarne, "Birria");
+	    else if (desc.contains(" lec ")) hacerClicEn(grupoCarne, "Lechon");
+
+	    // 4. ADIVINAMOS EXTRAS EXCLUYENTES
+	    if (desc.contains("c/t")) hacerClicEn(grupoConTodo, "Con todo");
+	    else if (desc.contains("s/ceb")) hacerClicEn(grupoConTodo, "Sin cebolla");
+	    else if (desc.contains("s/cil")) hacerClicEn(grupoConTodo, "Sin cilantro");
+	    else if (desc.contains("s/verd") && !desc.contains("s/verdura")) hacerClicEn(grupoConTodo, "Sin Verdura");
+
+	    // 5. CHECKBOXES (Estos SÍ los tienes globales, así que los encendemos directo)
+	    chkConQueso.setSelected(desc.contains("c/q"));
+	    chkSinAderezo.setSelected(desc.contains("s/aderezo"));
+	    chkSinVerduras.setSelected(desc.contains("s/verdura"));
+	    
+	    // (Opcional) Leer las notas
+	    // Las notas son la parte final del string, así que requerirían un poco más de manejo de texto,
+	    // pero por ahora textExtras.setText(""); es suficiente para no mezclar notas.
+	    textExtras.setText("");
+	}
     public String obtenerSeleccion(ButtonGroup grupo) {
         for(Enumeration<AbstractButton> botones = grupo.getElements(); botones.hasMoreElements();) {
             AbstractButton boton = botones.nextElement(); 
@@ -553,6 +908,15 @@ public class PanelOrdenes extends JPanel {
 
         }
         return "";
+    }
+    
+    public void limpiarTodo() {
+    	rbTacos.doClick();
+    	rbCant1.doClick();
+    	rbPastor.setSelected(true);
+    	textFieldCantidad.setText("");
+    	grupoConTodo.clearSelection();
+    	
     }
 
     // =========================================================
@@ -597,11 +961,11 @@ public class PanelOrdenes extends JPanel {
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
-
+    
     private TitledBorder crearBordeOscuro(String titulo) {
         return BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(new Color(100, 100, 100)), // Línea gris sutil
-            titulo, 
+            titulo+" "+"Mesa: "+numMesa, 
             TitledBorder.LEFT, 
             TitledBorder.TOP, 
             new Font("Segoe UI", Font.BOLD, 14), 

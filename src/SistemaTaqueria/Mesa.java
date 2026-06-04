@@ -19,13 +19,21 @@ public class Mesa {
 	public void setEstadoMesa(EstadoMesa estadoMesa) {
 		this.estadoMesa = estadoMesa;
 	}
+	public ArrayList<Persona> getPersonas() {
+		return personas;
+	}
+	public void setPersonas(ArrayList<Persona> personas) {
+		this.personas = personas;
+	}
 	public Mesa(int numMesa, EstadoMesa estadoMesa) {
 		super();
+		this.personas=new ArrayList<>();
 		this.numMesa = numMesa;
 		this.estadoMesa = estadoMesa;
 	}
 	public Mesa(int numMesa) {
 		super();
+		this.personas=new ArrayList<>();
 		this.numMesa = numMesa;
 		
 	}

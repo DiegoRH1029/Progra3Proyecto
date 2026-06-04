@@ -188,9 +188,11 @@ public class PanelLogin extends JPanel {
                     JOptionPane.showMessageDialog(null, "Error al conectarnos con la BD: " + e2.getMessage());
                 }
                 */
-                //Temporal
+                //*Temporal
                 String rol = "administrador";
+                user="Admin";
                 ventanaMain.loginExitoso(user, rol);
+                //*/
             }
         });
         

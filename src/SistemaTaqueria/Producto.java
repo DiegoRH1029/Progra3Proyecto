@@ -15,6 +15,7 @@ public class Producto {
 	public void setConQueso(boolean conQueso) {
 		this.conQueso = conQueso;
 	}
+	
 
 	public Producto(String producto, int cant, double precio, String notas,boolean conQueso) {
 		super();
@@ -24,7 +25,11 @@ public class Producto {
 		this.notas = notas;
 		this.conQueso=conQueso;
 	}
-
+	
+	//Haremos metodo para poder clonar un objeto
+	public Producto clonarProd() {
+		return new Producto(this.producto,this.cant,this.precio,this.notas,this.conQueso);
+	}
 	public String getProducto() {
 		return producto;
 	}
@@ -57,8 +62,15 @@ public class Producto {
 		this.notas = notas;
 	}
 	public String toString() {
-		
-		return cant + " " + producto+" " + notas;
+		String prodAbr = this.producto;
+	    if (prodAbr.equals("Volcanes")) prodAbr = "Vol";
+	    if (prodAbr.equals("Quesadillas")) prodAbr = "Ques";
+	    if (prodAbr.equals("Hamburguesa")) prodAbr = "Burg";
+	    String strRet=prodAbr+" " + notas;
+		return strRet.replaceAll(" +"," ").trim();
 	}
-
+	public double getPrecioTotal() {
+		return cant*precio;
+	}
+	
 }
