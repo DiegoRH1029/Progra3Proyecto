@@ -35,6 +35,7 @@ public class VentanaMain extends JFrame {
     private PanelMesas panelMesas;
     private PanelOrdenes panelOrden;
     private PanelPedidos panelPedidos;
+    private PanelHistorial panelHistorial;
 
     // Botones globales
     private JButton btnOrdenes;
@@ -131,6 +132,10 @@ public class VentanaMain extends JFrame {
         panelPedidos.setVentanaMain(this);
         panelContenedor.add(panelPedidos, "PEDIDOS");
         
+        panelHistorial= new PanelHistorial();
+        panelHistorial.setVentanaMain(this);
+        panelContenedor.add(panelHistorial, "HISTORIAL");
+        
         // Estado inicial: Mostrar Login y ocultar el menú lateral
         cardLayout.show(panelContenedor, "LOGIN");
         panelMenu.setVisible(false);
@@ -192,6 +197,7 @@ public class VentanaMain extends JFrame {
         });
         btnHistorialDeVentas.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		navegarA("HISTORIAL");
         	}
         });
         btnGastos.addActionListener(new ActionListener() {

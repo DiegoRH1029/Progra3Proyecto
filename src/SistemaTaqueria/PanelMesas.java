@@ -260,8 +260,9 @@ public class PanelMesas extends JPanel {
 		textMesa.append("============================\n");
 		textMesa.append(String.format("%-24s $%6.2f\n","Total mesa: ", totalMesa));
 		
+		
 	}
-
+	
 	public static void actualizarColores() {
 		List <Mesa> listaMesa = ControladorMesa.generarListaMesas(); //Sacamos la lista de las mesas de la base de datos
 		int i=0;

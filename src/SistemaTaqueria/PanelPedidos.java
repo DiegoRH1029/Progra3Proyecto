@@ -7,7 +7,8 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
-
+import java.awt.Component;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
@@ -16,6 +17,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.util.List;
 import java.awt.event.ActionEvent;
 
@@ -41,7 +43,42 @@ public class PanelPedidos extends JPanel {
 				return false;
 			}
 		};
-		tablaCocina = new JTable(modeloTabla);
+			tablaCocina = new JTable(modeloTabla) {
+					@Override
+					public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+						Component c = super.prepareRenderer(renderer, row, column);
+
+						// 1. Respetar el color verde cuando el usuario selecciona una fila
+						if (isRowSelected(row)) {
+							return c;
+						}
+
+						// 2. Leer el ID oculto de la columna 0 ("M-1", "P-1-Persona", "O-1-32")
+						String idOculto = getModel().getValueAt(row, 0).toString();
+						String[] partes = idOculto.split("-");
+						
+						if (partes.length >= 2) {
+							int numMesa = Integer.parseInt(partes[1]);
+							
+							// 3. Alternar el color de fondo usando el número de la mesa
+							if (numMesa % 2 == 0) {
+								c.setBackground(new Color(60, 60, 60)); // Gris original para mesas pares
+							} else {
+								c.setBackground(new Color(45, 45, 45)); // Gris más oscuro para mesas impares
+							}
+							
+							// 4. (Opcional pero recomendado) Hacer que el encabezado "MESA X" resalte más
+							if (partes[0].equals("M")) {
+								c.setFont(new Font("Segoe UI", Font.BOLD, 17));
+								c.setForeground(new Color(255, 193, 7)); // Letra amarilla para el título
+							} else {
+								c.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+								c.setForeground(Color.WHITE); // Letra blanca normal para el resto
+							}
+						}
+						return c;
+					}
+				};
 		tablaCocina.setRowHeight(35);
 		tablaCocina.setFont(new Font("Segoe UI",Font.PLAIN,16));
 		tablaCocina.setForeground(Color.WHITE);
@@ -67,21 +104,34 @@ public class PanelPedidos extends JPanel {
 		btnAbajo = new JButton("Bajar");
 		btnLiberar= new JButton("Liberar seleccionado");
 
-		estilizarBoton(btnArriba,new Color(100,100,100),Color.WHITE);
-		estilizarBoton(btnAbajo,new Color(100,100,100),Color.WHITE);
-		estilizarBoton(btnLiberar,new Color(100,100,100),Color.BLACK);
-		panelBotones.add(btnAbajo);
+		estilizarBoton(btnArriba,new Color(255, 193, 7),Color.WHITE);
+		estilizarBoton(btnAbajo,new Color(255,0,0),Color.WHITE);
+		estilizarBoton(btnLiberar,new Color(8,51,162),Color.BLACK);
 		panelBotones.add(btnArriba);
+		panelBotones.add(btnAbajo);
 		panelBotones.add(btnLiberar);
 		add(panelBotones,BorderLayout.EAST);
 		
 		//------Acciones 
 		btnArriba.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				int filaSeleccionada = (int)tablaCocina.getSelectedRow();
+				filaSeleccionada--;
+				if(filaSeleccionada!=-1){
+					tablaCocina.setRowSelectionInterval(filaSeleccionada, filaSeleccionada);
+				}
+				else {
+					tablaCocina.setRowSelectionInterval(0, 0);
+				}
 			}
 		});
 		btnAbajo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				int filaSeleccionada = (int)tablaCocina.getSelectedRow();
+				filaSeleccionada++;
+				if(filaSeleccionada < tablaCocina.getRowCount()&&filaSeleccionada!=0){
+					tablaCocina.setRowSelectionInterval(filaSeleccionada, filaSeleccionada);
+				}
 			}
 		});
 		//Este boton liberar el pedido, ya sea seleccionando mesa, persona o producto individual
@@ -112,8 +162,40 @@ public class PanelPedidos extends JPanel {
 				cargarPedidos();
 			}
 		});
+	    btnLiberar.addMouseListener(new MouseAdapter() {
+	        public void mouseEntered(java.awt.event.MouseEvent evt) {
+	        	 btnLiberar.setBackground(new Color(46, 204, 113));
+	        	 btnLiberar.setForeground(Color.black);
+	        }
+	        public void mouseExited(java.awt.event.MouseEvent evt) {
+	        	 btnLiberar.setBackground(new Color(8,51,162));
+	        	 btnLiberar.setForeground(Color.white);
+	        }
+	    });
+	    btnAbajo.addMouseListener(new MouseAdapter() {
+	        public void mouseEntered(java.awt.event.MouseEvent evt) {
+	        	 btnAbajo.setBackground(new Color(46, 204, 113));
+	        	 btnAbajo.setForeground(Color.black);
+	        }
+	        public void mouseExited(java.awt.event.MouseEvent evt) {
+	        	 btnAbajo.setBackground(new Color(255,0,0));
+	        	 btnAbajo.setForeground(Color.white);
+	        }
+	    });
+	    
+	    btnArriba.addMouseListener(new MouseAdapter() {
+	        public void mouseEntered(java.awt.event.MouseEvent evt) {
+	        	 btnArriba.setBackground(new Color(46, 204, 113));
+	        	 btnArriba.setForeground(Color.black);
+	        }
+	        public void mouseExited(java.awt.event.MouseEvent evt) {
+	        	 btnArriba.setBackground(new Color(255, 193, 7));
+	        	 btnArriba.setForeground(Color.white);
+	        }
+	    });
 		cargarPedidos();
 	}
+
     public void setVentanaMain(VentanaMain ventanaMain) {
         this.ventanaMain = ventanaMain;
     }

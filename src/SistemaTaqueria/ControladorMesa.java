@@ -7,13 +7,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 
 public class ControladorMesa {
 	
-	private static List<Mesa> listaMesas = new ArrayList<>();	
-	
+	private static List<Mesa> listaMesas = new ArrayList<>();
+
 	//Actualizaremos este objeto para que jale todos los pedidos de la base de datos y los cargue en la lista de mesas
 	public static List<Mesa> generarListaMesas(){
 		try {
@@ -175,19 +177,8 @@ public class ControladorMesa {
 	public static boolean cobrarMesa(int numMesa) {
 		Connection con=null;
 		try {
-			con=ConexionBD.obtenerConexion();
-			con.setAutoCommit(false);
-			//Aqui ira la comunicacion con la tabla historial ---<
-			borrarCuentaActiva(numMesa,con);
-			cambiarEstadoMesaLibre(numMesa,con);
-			con.commit();
+			generarCobroMesa(numMesa);//Aqui ira la comunicacion con la tabla historial ---<
 			return true;
-		}catch(SQLException ex1) {
-			ex1.printStackTrace();
-			try {
-				if(con!=null)con.rollback();//En caso de que hlgo falle se hace rollback
-			}catch(SQLException ex2){}
-			return false;
 		}finally {
 			try {if(con!=null) con.close();}catch(SQLException ex3){}//Si todo esta correcto se cierra la conexion
 		}
@@ -224,6 +215,7 @@ public class ControladorMesa {
 		}
 		
 	}
+	
 	//Ahora despues de borrar todo la mesa estara libre, usaremos este metodo
 	private static void cambiarEstadoMesaLibre(int numMesa,Connection con)throws SQLException{
 		String sqlEstado = "UPDATE mesas SET estado = 'Libre' WHERE idMesa = ?";
@@ -232,4 +224,83 @@ public class ControladorMesa {
 			psEstado.executeUpdate();
 		}
 	}
+	//Aqui meteremos la funcion para cobrar una mesa, esta guardara el cobro en la base de datos en la tabla finanzas 
+	public static boolean generarCobroMesa(int numMesa) {
+		Connection con = null;
+		try {
+			con=ConexionBD.obtenerConexion();
+			con.setAutoCommit(false);
+			int idCuentaActiva = -1;
+			String sqlGetCuenta = "SELECT idCuenta FROM cuentas WHERE idMesa = ?";
+			try(PreparedStatement psGet = con.prepareStatement(sqlGetCuenta)){
+				psGet.setInt(1, numMesa);
+				ResultSet rsGet = psGet.executeQuery();
+				if(rsGet.next()) idCuentaActiva = rsGet.getInt("idCuenta");	
+			}
+			if(idCuentaActiva!=-1) {
+				//Aqui arameremos el ticket de la cuenta 
+				//Usaremos setring builder
+				StringBuilder ticket = new StringBuilder();
+				LocalDateTime ahora = LocalDateTime.now();
+				DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/YYYY HH:mm:ss");
+				
+				ticket.append("===============================\n");
+				ticket.append("          TAQUERIA GON         \n");
+				ticket.append("          Desde 1985           \n");
+				ticket.append("        Jesus Maria Ags.       \n");
+				ticket.append("      Agustin Iturbide 108     \n");
+				ticket.append("===============================\n");
+				ticket.append("Fecha: ").append(ahora.format(formato)).append("\n");
+				ticket.append("Mesa: ").append(numMesa).append("\n");
+
+				
+				//Aqui vi un problema y es que si agrega el text mesa tambien en el ticket agarra los productos no terminados asi que mejor los 
+				//hagarramos desde la base de datos 
+				double totalMesa=0.0;
+				String sqlTotalMesa = "SELECT cantidad, producto, precio FROM pedidos WHERE idPersona IN(SELECT idPersona FROM personas WHERE idCuenta=?)";
+				try(PreparedStatement psPed = con.prepareStatement(sqlTotalMesa)){
+					psPed.setInt(1, idCuentaActiva);
+					ResultSet rsPed=psPed.executeQuery();
+					while(rsPed.next()) {
+						int cant = rsPed.getInt("cantidad");
+						String prod = rsPed.getString("producto");
+						double precioTotal = rsPed.getDouble("precio");
+						if(prod.length()>20) {
+							prod=prod.substring(0,18)+"..";//Si sobrepasa los 20 caracteres se escribe ..
+						}
+						ticket.append(String.format("%-3d %-20s $%6.2f\n", cant, prod, precioTotal));
+						totalMesa+=precioTotal;
+					}
+				}
+				ticket.append("-------------------------------\n");
+				ticket.append(String.format("%-24s $%6.2f\\n", "TOTAL A PAGAR: ",totalMesa));
+				ticket.append("===============================\n");
+				ticket.append("         Vuelva Pronto         \n");
+				ticket.append("===============================\n");
+				
+				//Ya esta el ticket generado, ahora insertaremos los datos a la tabla finanzas 
+				String sqlInsertFinanzas = "INSERT INTO finanzas (tipo,monto,detalle) VALUES ('VENTA',?,?)";
+				try(PreparedStatement psFinan = con.prepareStatement(sqlInsertFinanzas)){
+					psFinan.setDouble(1, totalMesa);//Aqui iria insertado el total de la mesa, vamos a calcularlo antes desde la base de datos
+					psFinan.setString(2, ticket.toString());
+					psFinan.executeUpdate();
+				}
+				borrarCuentaActiva(numMesa,con);
+				cambiarEstadoMesaLibre(numMesa,con);
+				con.commit();
+				return true;
+			}
+			return false;
+		}catch(Exception e1) {
+			e1.printStackTrace();
+			try {
+			if(con!=null)con.rollback();//En caso de que hlgo falle se hace rollback
+		}catch(SQLException ex2){}
+		return false;
+		}
+		finally {
+		try {if(con!=null) con.close();}catch(SQLException ex3){}//Si todo esta correcto se cierra la conexion
+		}
+	}
+	
 }
