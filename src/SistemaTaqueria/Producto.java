@@ -7,6 +7,7 @@ public class Producto {
 	protected double precio;
 	protected String notas;
 	protected boolean conQueso;
+	protected String estado = "Pendiente";
 	
 	public boolean isConQueso() {
 		return conQueso;
@@ -17,18 +18,19 @@ public class Producto {
 	}
 	
 
-	public Producto(String producto, int cant, double precio, String notas,boolean conQueso) {
+	public Producto(String producto, int cant, double precio, String notas,boolean conQueso,String estado) {
 		super();
 		this.producto = producto;
 		this.cant = cant;
 		this.precio = precio;
 		this.notas = notas;
 		this.conQueso=conQueso;
+		this.estado=estado;
 	}
 	
 	//Haremos metodo para poder clonar un objeto
 	public Producto clonarProd() {
-		return new Producto(this.producto,this.cant,this.precio,this.notas,this.conQueso);
+		return new Producto(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.estado);
 	}
 	public String getProducto() {
 		return producto;
@@ -71,6 +73,14 @@ public class Producto {
 	}
 	public double getPrecioTotal() {
 		return cant*precio;
+	}
+
+	public String getEstado() {
+		return estado;
+	}
+
+	public void setEstado(String estado) {
+		this.estado = estado;
 	}
 	
 }

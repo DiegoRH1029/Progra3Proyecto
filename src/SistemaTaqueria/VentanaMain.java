@@ -34,9 +34,11 @@ public class VentanaMain extends JFrame {
     private PanelBienvenida panelBien;
     private PanelMesas panelMesas;
     private PanelOrdenes panelOrden;
+    private PanelPedidos panelPedidos;
 
     // Botones globales
     private JButton btnOrdenes;
+    private JButton btnPedidos;
     private JButton btnCorteDeCaja;
     private JButton btnHistorialDeVentas;
     private JButton btnGastos;
@@ -125,6 +127,10 @@ public class VentanaMain extends JFrame {
         panelOrden.setVentanaMain(this);
         panelContenedor.add(panelOrden, "ORDEN");
         
+        panelPedidos= new PanelPedidos();
+        panelPedidos.setVentanaMain(this);
+        panelContenedor.add(panelPedidos, "PEDIDOS");
+        
         // Estado inicial: Mostrar Login y ocultar el menú lateral
         cardLayout.show(panelContenedor, "LOGIN");
         panelMenu.setVisible(false);
@@ -135,6 +141,11 @@ public class VentanaMain extends JFrame {
         btnOrdenes = new JButton("Órdenes / Mesas");
         estilizarBoton(btnOrdenes);
         panelMenu.add(btnOrdenes);
+        panelMenu.add(Box.createRigidArea(new Dimension(0, 10)));
+        
+        btnPedidos = new JButton("Pedidos");
+        estilizarBoton(btnPedidos);
+        panelMenu.add(btnPedidos);
         panelMenu.add(Box.createRigidArea(new Dimension(0, 10)));
         
         btnCorteDeCaja = new JButton("Corte de caja");
@@ -169,6 +180,11 @@ public class VentanaMain extends JFrame {
                 // Al darle clic a Órdenes, el mesero debe ver la pantalla de mesas primero
                 navegarA("MESAS");
             }
+        });
+        btnPedidos.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		navegarA("PEDIDOS");
+        	}
         });
         btnCorteDeCaja.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
@@ -238,6 +254,10 @@ public class VentanaMain extends JFrame {
     	Mesa mesa = ControladorMesa.getMesa(mesaSelect);
     	panelOrden.setMesa(mesa,modoEdicion);
     	navegarA("ORDEN");
+    }
+    
+    public void actualizarPedidos() {
+    	panelPedidos.cargarPedidos();
     }
 
     // =========================================================

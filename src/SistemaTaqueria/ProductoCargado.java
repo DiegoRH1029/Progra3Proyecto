@@ -3,8 +3,8 @@ package SistemaTaqueria;
 public class ProductoCargado extends Producto{
 	private String descripcionBD;
 	
-	public ProductoCargado(String descripcionBD,int cant, double precio) {
-		super("",cant,precio,"",false);
+	public ProductoCargado(String descripcionBD,int cant, double precio,String estado) {
+		super("",cant,precio,"",false,estado);
 		this.descripcionBD = descripcionBD;
 	}
 	@Override 

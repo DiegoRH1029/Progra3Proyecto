@@ -4,6 +4,7 @@ import javax.swing.*;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.awt.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -371,12 +372,38 @@ public class PanelOrdenes extends JPanel {
         	}
         });
         //Boton para regresar a panel de mesas falta: validacion de seguro que quiere salir
+        //Meteremos valicaciones al boton regresar (en caso de que apriete regresar en medio de un pedido)
         btnRegresar.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(ventanaMain != null) {
-                	ventanaMain.mostrarMenu(true);
-                	ventanaMain.navegarA("MESAS");
-                }
+            	boolean hayCambios = (mesa!=null&&!mesa.getPersonas().isEmpty())||!listaProductos.isEmpty();
+            	if(hayCambios) {
+            		int opcion = JOptionPane.showConfirmDialog(null, 
+            				"Tienes una orden en prograso\n, Desea guardar los cambios?","Guardar cambios",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+            		if(opcion == JOptionPane.YES_OPTION) {
+            			//Si hay productos pero no le dio a terminar persona lo hacemos por ellos
+            			if(!listaProductos.isEmpty()) {
+            				btnTerminarPersona.doClick();
+            			}
+            			btnFinalizar.doClick();
+            		}else if(opcion==JOptionPane.NO_OPTION) {
+            			if(ventanaMain!=null) {
+            				limpiarTodo();
+            				//Si no hacen cambios volvemos a restaurar los valores originales desde la base de datos 
+            				ControladorMesa.generarListaMesas();
+            				ventanaMain.mostrarMenu(true);
+            				ventanaMain.navegarA("MESAS");
+            				
+            			}
+            		}
+            		//Si eligen cancelar o cerrar la tacha el oanel no hace nada
+            	}else {
+        			if(ventanaMain!=null) {
+        				limpiarTodo();
+        				ventanaMain.mostrarMenu(true);
+        				ventanaMain.navegarA("MESAS");
+        			}
+            	
+            	}
             }
         });
         //Finaliza la orden total de la mesa
@@ -391,34 +418,72 @@ public class PanelOrdenes extends JPanel {
         			return;
         		}
         		Connection con=null;
+        		int idCuentaActiva = 0; //Aqui se guarda el turno
         		try {
         			con=ConexionBD.obtenerConexion();
         			con.setAutoCommit(false);//Esto es para que solo se actualice al final
+        			//Para mantener el orden de llegada mejor usaremos el id original de la mesa
+       
         			//Si esta en modo edicion se borra la cuenta anterior de la base de datos antes de añadir la nueva orden
+        			//Para que no te vuelvan a aparecer productos ya terminados en caso de que editen la orden haremos lo siguiente
+        			HashMap<String,String> estadosViejos= new HashMap<>();
         			if(modoEdicion) {
-        				String sqlDelete = "DELETE FROM cuentas WHERE idMesa = ?";
-            			PreparedStatement psDelete =  con.prepareStatement(sqlDelete);
-            			psDelete.setInt(1, mesa.getNumMesa());
-            			psDelete.executeUpdate();
-        			}
+        				//buscaremos el ide de la cuenta a borrar
+        				String sqlGetCuenta="SELECT idCuenta FROM cuentas WHERE idMesa=?";
+        				PreparedStatement psGet = con.prepareStatement(sqlGetCuenta);
+        				psGet.setInt(1, mesa.getNumMesa());
+        				ResultSet rsGet = psGet.executeQuery();
+        				if(rsGet.next()) {
+        					idCuentaActiva = rsGet.getInt("idCuenta");
+        					//Aqui se recupera el stock antes de borrar
+        					//borramos los pedidos
+        					String sqlRecuperar = "SELECT producto, cantidad, estado FROM pedidos WHERE idPersona IN(SELECT idPersona FROM personas WHERE idCuenta=?)";
+        					PreparedStatement psRec = con.prepareStatement(sqlRecuperar);
+        					psRec.setInt(1, idCuentaActiva);
+        					ResultSet rsRec = psRec.executeQuery();
+        					while(rsRec.next()) {
+        						String prodDB = rsRec.getString("producto");
+        						int cantVieja = rsRec.getInt("cantidad");
+
+        						String estadoDB = rsRec.getString("estado");//Leemos el estado
+        						estadosViejos.put(prodDB, estadoDB);//Reespaldamos los estados
+        						String nombreBase = InventarioDB.obtenerNombreBase(prodDB);
+        						InventarioDB.sumarStockMemoria(nombreBase, cantVieja);
+        					}
+        					//Borramos los pedidos y personas
+        					String sqlDeletePedidos = "DELETE FROM pedidos WHERE idPersona IN(SELECT idPersona FROM personas WHERE idcuenta=?)";
+        					PreparedStatement psDelPed = con.prepareStatement(sqlDeletePedidos);
+        					psDelPed.setInt(1, idCuentaActiva);
+        					psDelPed.executeUpdate();
+        					//borramos las personas
+        					String sqlDeletePersonas = "DELETE FROM personas WHERE idcuenta=?";
+        					PreparedStatement psDelPer= con.prepareStatement(sqlDeletePersonas);
+        					psDelPer.setInt(1, idCuentaActiva);
+        					psDelPer.executeUpdate();
+    
+        				}
+        			}else {
+        				//Aqui se inicia un nuevo guardado de la orden con la tabla ya limpia
         			//Creamos una cuenta
-        			String sqlCuenta = "INSERT INTO cuentas (idMesa) VALUES(?)";
-        			PreparedStatement psCuenta =  con.prepareStatement(sqlCuenta,java.sql.Statement.RETURN_GENERATED_KEYS);
-        			psCuenta.setInt(1, mesa.getNumMesa());
-        			psCuenta.executeUpdate();
-        			
-        			ResultSet rsCuenta= psCuenta.getGeneratedKeys();
-        			int idCuenta=0;
-        			if(rsCuenta.next())idCuenta=rsCuenta.getInt(1);
+	        			String sqlCuenta = "INSERT INTO cuentas (idMesa) VALUES(?)";
+	        			PreparedStatement psCuenta =  con.prepareStatement(sqlCuenta,java.sql.Statement.RETURN_GENERATED_KEYS);
+	        			psCuenta.setInt(1, mesa.getNumMesa());
+	        			psCuenta.executeUpdate();
+	        			
+	        			ResultSet rsCuenta= psCuenta.getGeneratedKeys();
+	        			if(rsCuenta.next())idCuentaActiva=rsCuenta.getInt(1);
+	        			
+        			}
+        			//Aqui se guarda la orden sea nueva o editada
         			String sqlPersona="INSERT INTO personas (idCuenta,nombre) VALUES(?,?)";
         			PreparedStatement psPersona =  con.prepareStatement(sqlPersona,java.sql.Statement.RETURN_GENERATED_KEYS);
         			
-        			String sqlPedido = "INSERT INTO pedidos (idPersona,cantidad, producto,precio) VALUES (?,?,?,?)";
+        			String sqlPedido = "INSERT INTO pedidos (idPersona,cantidad, producto,precio,estado) VALUES (?,?,?,?,?)";
         			PreparedStatement psPedido =  con.prepareStatement(sqlPedido);
         			
         			//Personas y productos 
         			for(Persona p: mesa.getPersonas()) {
-        				psPersona.setInt(1, idCuenta);
+        				psPersona.setInt(1, idCuentaActiva);
         				psPersona.setString(2, p.getNombre());
         				psPersona.executeUpdate();
         				
@@ -431,7 +496,19 @@ public class PanelOrdenes extends JPanel {
         					psPedido.setInt(2, prod.getCant());
         					psPedido.setString(3, prod.toString());
         					psPedido.setDouble(4, prod.getPrecioTotal());
+        					//Aqui restauramos el estado o lo ponemos como pendiente
+        					String estadoFinal = "Pendiente";//por defecto
+        					if(modoEdicion&&estadosViejos.containsKey(prod.toString())) {
+        						estadoFinal = estadosViejos.get(prod.toString());
+        					}
+        					psPedido.setString(5, estadoFinal);
         					psPedido.executeUpdate();
+        					//Aqui restamos el nuevo stock en la memoria y lo guardamos en la base de datos
+        					if(estadoFinal=="Pendiente") {
+            					String nombreBase=InventarioDB.obtenerNombreBase(prod.toString());
+            					InventarioDB.restarStockMemoria(nombreBase, prod.getCant());
+            					InventarioDB.actualizarStockBD(nombreBase, con);
+        					}
         				}
         			}
         			//Actualizamos el estado de la mesa despues de guardar la orden
@@ -444,10 +521,12 @@ public class PanelOrdenes extends JPanel {
         			JOptionPane.showMessageDialog(null, "Orden de la mesa "+mesa.getNumMesa()+" añadida con exito a la base de datos", "Actu BD", JOptionPane.INFORMATION_MESSAGE);	
         			//Limpiamos todo lo de la pantalla para la siguiente orden 
         			limpiarTodo();
+        			
         			//Nos regresamos a mesas
         			if(ventanaMain!=null) {
         				ventanaMain.mostrarMenu(true);
         				PanelMesas.actualizarColores();
+        				ventanaMain.actualizarPedidos();
         				ventanaMain.navegarA("MESAS");
         			}
         		}catch(SQLException ex1) {
@@ -495,7 +574,7 @@ public class PanelOrdenes extends JPanel {
 	        	if((InventarioDB.estaDisponible(prodStr)&&InventarioDB.validarStockMemoria(prodStr, cant))) {
 	        		if(esBebida) {
 	
-	        			Bebida b = new Bebida(obtenerSeleccion(grupoProducto),cant,precio,"",false,prodStr);
+	        			Bebida b = new Bebida(obtenerSeleccion(grupoProducto),cant,precio,"",false,prodStr,"Pendiente");
 	        			listaProductos.add(b);
 	        		}
 	        		else {
@@ -506,7 +585,7 @@ public class PanelOrdenes extends JPanel {
 	            			String carneStr = obtenerSeleccion(grupoCarne); 
 	            			if(InventarioDB.estaDisponible(carneStr)) {
 	            				String extrasStr = obtenerSeleccion(grupoConTodo);
-		            			Antojitos antoj = new Antojitos(prodStr,cant,precio,notas,conQueso,carneStr,extrasStr);
+		            			Antojitos antoj = new Antojitos(prodStr,cant,precio,notas,conQueso,carneStr,extrasStr,"Pendiente");
 		            			listaProductos.add(antoj);
 	            			}
 	            			else {
@@ -518,7 +597,7 @@ public class PanelOrdenes extends JPanel {
 	            			String extraSnacks = "" ;
 	            			if(chkSinAderezo.isSelected()) extraSnacks+="Sin aderezo";
 	            			if(chkSinVerduras.isSelected()) extraSnacks+="Sin Verdura";
-	            			Snacks snack = new Snacks(prodStr,cant,precio,notas,conQueso,extraSnacks);
+	            			Snacks snack = new Snacks(prodStr,cant,precio,notas,conQueso,extraSnacks,"Pendiente");
 	            			listaProductos.add(snack);
 	            		}
 	        		}
@@ -540,6 +619,10 @@ public class PanelOrdenes extends JPanel {
         	public void actionPerformed(ActionEvent e) {
         		int ind = listaTicket.getSelectedIndex();
         		if(ind!=-1) {
+        			if(listaProductos.get(ind).getEstado().equals("Terminado")) {
+        				JOptionPane.showMessageDialog(null, "No puedes eliminar un producto ya terminado", "Advertencia", JOptionPane.ERROR_MESSAGE);
+        				return;
+        			}
         			if(JOptionPane.showConfirmDialog(null,"Desea eliminar este producto?"+listaProductos.get(ind).toString(),"Seguro?",JOptionPane.YES_NO_CANCEL_OPTION)==JOptionPane.YES_OPTION) {
         				listaProductos.remove(ind);
         				modeloTicket.remove(ind);
@@ -561,6 +644,10 @@ public class PanelOrdenes extends JPanel {
         			JOptionPane.showMessageDialog(null, "Selecciona un producto", "Error", JOptionPane.ERROR_MESSAGE);
         			return;
         		}
+    			if(listaProductos.get(ind).getEstado().equals("Terminado")) {
+    				JOptionPane.showMessageDialog(null, "No puedes actualizar un producto ya terminado", "Advertencia", JOptionPane.ERROR_MESSAGE);
+    				return;
+    			}
         		String prodStr="";
         		String canStr ="";
         		if(textFieldCantidad.getText().equals("")) {
@@ -586,7 +673,7 @@ public class PanelOrdenes extends JPanel {
 	        	if((InventarioDB.estaDisponible(prodStr)&&InventarioDB.validarStockMemoria(prodStr, cant))) {
 	        		if(esBebida) {
 	
-	        			Bebida b = new Bebida(obtenerSeleccion(grupoProducto),cant,precio,"",false,prodStr);
+	        			Bebida b = new Bebida(obtenerSeleccion(grupoProducto),cant,precio,"",false,prodStr,"Pendiente");
 	        			listaProductos.set(ind,b);
 	        		}
 	        		else {
@@ -597,7 +684,7 @@ public class PanelOrdenes extends JPanel {
 	            			String carneStr = obtenerSeleccion(grupoCarne); 
 	            			if(InventarioDB.estaDisponible(carneStr)) {
 	            				String extrasStr = obtenerSeleccion(grupoConTodo);
-		            			Antojitos antoj = new Antojitos(prodStr,cant,precio,notas,conQueso,carneStr,extrasStr);
+		            			Antojitos antoj = new Antojitos(prodStr,cant,precio,notas,conQueso,carneStr,extrasStr,"Pendiente");
 		            			listaProductos.set(ind,antoj);
 	            			}
 	            			else {
@@ -609,7 +696,7 @@ public class PanelOrdenes extends JPanel {
 	            			String extraSnacks = "" ;
 	            			if(chkSinAderezo.isSelected()) extraSnacks+="Sin aderezo";
 	            			if(chkSinVerduras.isSelected()) extraSnacks+="Sin Verdura";
-	            			Snacks snack = new Snacks(prodStr,cant,precio,notas,conQueso,extraSnacks);
+	            			Snacks snack = new Snacks(prodStr,cant,precio,notas,conQueso,extraSnacks,"Pendiente");
 	            			listaProductos.set(ind,snack);
 	            		}
 	        		}
@@ -629,6 +716,11 @@ public class PanelOrdenes extends JPanel {
         //Termina la orden para esa persona
         btnTerminarPersona.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		int indPersona=comboPersonas.getSelectedIndex();
+        		if(mesa!=null&&indPersona<mesa.getPersonas().size()) {
+        			JOptionPane.showMessageDialog(null, "Intentas añadir una persona vacia", "Advertencia", JOptionPane.ERROR_MESSAGE);
+        			return;
+        		}
         		if(listaProductos.isEmpty()) {
         			JOptionPane.showMessageDialog(null, "Aun no añades ningun producto", "Orden vacia", JOptionPane.INFORMATION_MESSAGE);
         		}
@@ -641,8 +733,9 @@ public class PanelOrdenes extends JPanel {
             		mesa.addPersona(p);
             		JOptionPane.showMessageDialog(null, "Persona "+nombreActual+" añadida con exito", "Persona", JOptionPane.INFORMATION_MESSAGE);
               		contPer++;
-              		nombreActual="Persona"+(contPer+1);
+              		nombreActual="Persona "+(contPer+1);
               		comboPersonas.addItem(nombreActual);
+              		comboPersonas.setSelectedItem(nombreActual);
               		scrollTicket.setBorder(crearBordeOscuro(nombreActual));
             		modeloTicket.clear();
             		listaProductos.clear();	
@@ -769,6 +862,13 @@ public class PanelOrdenes extends JPanel {
         				int ind = listaTicket.getSelectedIndex();
         				if(ind!=-1&&!listaProductos.isEmpty()) {
         					Producto p = listaProductos.get(ind);
+        					//Añadimos bloqueo si el usuario quiere editar un producto ya preparado
+        					if(p.getEstado().equals("Terminado")) {
+        						JOptionPane.showMessageDialog(null,"Este producto ya se preparo","Producto terminado",JOptionPane.WARNING_MESSAGE);
+        						listaTicket.clearSelection();
+        						limpiarTodo();
+        						return;
+        					}
         					cargarDatosInterfaz(p);
         				}
         			}
@@ -791,14 +891,15 @@ public class PanelOrdenes extends JPanel {
         				modeloTicket.clear();
         				for(Producto prod : listaProductos) {
 	        				String desc = prod.toString();
-	    	        		if (desc.length() > 20) {
-	    	        		    desc = desc.substring(0, 18) + "..";
-    	        		}
-    	        		String lineaTicket = String.format("%-3d %-20s $%6.2f\n", prod.getCant(), desc, prod.getPrecioTotal());
-    	        		modeloTicket.addElement(lineaTicket);
-            			//Seleccionamos el primer producto en automatico
-            			if(!modeloTicket.isEmpty())listaTicket.setSelectedIndex(0);
+	    	        		if (desc.length() > 20) desc = desc.substring(0, 18) + "..";
+	    	        		//indicamos que productos ya estan terminados
+	    	        		if(prod.getEstado().equals("Terminado"))desc="✓"+desc;
+	    
+	    	        		String lineaTicket = String.format("%-3d %-20s $%6.2f\n", prod.getCant(), desc, prod.getPrecioTotal());
+	    	        		modeloTicket.addElement(lineaTicket);
+	        
         				}
+        			return;	
         			}else {
             			listaProductos=new ArrayList<>();
             			modeloTicket.clear();

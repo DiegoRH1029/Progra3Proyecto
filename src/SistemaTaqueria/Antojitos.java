@@ -7,8 +7,8 @@ public class Antojitos extends Producto {
 	
 
 	public Antojitos(String producto, int cant, double precio, String notas, boolean conQueso, String carne,
-			String verduras) {
-		super(producto, cant, precio, notas, conQueso);
+			String verduras,String estado) {
+		super(producto, cant, precio, notas, conQueso,estado);
 		this.carne = carne;
 		this.verduras = verduras;
 	}
@@ -30,7 +30,7 @@ public class Antojitos extends Producto {
 	}
 	@Override 
 	public Producto clonarProd() {
-		return new Antojitos(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.carne,this.verduras);
+		return new Antojitos(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.carne,this.verduras,this.estado);
 	}
 	@Override 
 	public String toString() {

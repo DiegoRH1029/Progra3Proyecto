@@ -176,10 +176,46 @@ public class PanelMesas extends JPanel {
 				ventanaMain.ordenando(mesaSelect,true);//modo edicion = true;
 			}
 		});
-
+		//Haremos el boton de editar mesas consiste en borrar todos los pedidos, todas las personas etc, poner la mesa libre y guardar ingresos y 
+		//Y generar ticket con todo el resumen de la orden
 		btnLiberarMesa.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+				EstadoMesa estadoActual =ControladorMesa.getEstadoMesa(mesaSelect);
+				int confirmacion;
+				if(estadoActual == EstadoMesa.ESPERANDO) {
+					confirmacion = JOptionPane.showConfirmDialog(null, "Aun hay pedidos pendientes, desea cancelar?","Cancelar mesa",JOptionPane.YES_NO_OPTION);
+					if(confirmacion == JOptionPane.YES_OPTION) {
+						int resultado = ControladorMesa.cancelarMesa(mesaSelect);
+						switch(resultado) {
+						case 1:
+							JOptionPane.showMessageDialog(null,"Mesa "+mesaSelect+" cancelada correctamente","Cancelacion exitosa",JOptionPane.INFORMATION_MESSAGE);
+							break;
+						case 2:
+							JOptionPane.showMessageDialog(null,"Mesa "+mesaSelect+" cancelada/cobrada correctamente","Cancelacion parcial exitosa",JOptionPane.INFORMATION_MESSAGE);
+							break;
+						default:
+							JOptionPane.showMessageDialog(null,"Error al intentar cancelar, revise base de datos","Error",JOptionPane.ERROR_MESSAGE);
+							
+						}
+						actualizarColores();
+						mostrarDetallesMesas(null);
+					}
+				}
+				else {
+					if(estadoActual==EstadoMesa.ATENDIDA) {
+						confirmacion = JOptionPane.showConfirmDialog(null, "Desea cobrar y liberar esta mesa?","Cobrar mesa",JOptionPane.YES_NO_OPTION);
+						if(confirmacion==JOptionPane.YES_OPTION) {
+							boolean exito=ControladorMesa.cobrarMesa(mesaSelect);
+							if(exito) {
+								JOptionPane.showMessageDialog(null,"Mesa "+mesaSelect+" cobrada correctamente","Cancelacion exitosa",JOptionPane.INFORMATION_MESSAGE);
+								actualizarColores();
+								mostrarDetallesMesas(null);
+							}else {
+								JOptionPane.showMessageDialog(null,"Error al intentar cobrar, revise base de datos","Error",JOptionPane.ERROR_MESSAGE);
+							}
+						}
+					}
+				}
 			}
 		});
 		//Boton generar nueva orden

@@ -6,8 +6,8 @@ public class Snacks extends Producto{
 
 
 
-	public Snacks(String producto, int cant, double precio, String notas, boolean conQueso, String extrasSnacks) {
-		super(producto, cant, precio, notas, conQueso);
+	public Snacks(String producto, int cant, double precio, String notas, boolean conQueso, String extrasSnacks,String estado) {
+		super(producto, cant, precio, notas, conQueso,estado);
 		this.extrasSnacks = extrasSnacks;
 	}
 
@@ -22,7 +22,7 @@ public class Snacks extends Producto{
 	
 	@Override 
 	public Producto clonarProd() {
-		return new Snacks(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.extrasSnacks);
+		return new Snacks(this.producto,this.cant,this.precio,this.notas,this.conQueso,this.extrasSnacks,this.estado);
 	}
 	@Override 
 	public String toString() {
