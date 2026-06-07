@@ -149,10 +149,10 @@ public class ControladorMesa {
 					
 				}
 				if(hayTerminados) {
-					//Aqui se interta los pedidos a la tabla de historial pedidos
-					borrarCuentaActiva(numMesa,con);
-					cambiarEstadoMesaLibre(numMesa,con);
 					con.commit();
+					con.close();
+					cobrarMesa(numMesa);
+		
 					return 2;
 				}else {
 					//Si no quedo nada lo borramos todo alv
@@ -241,45 +241,51 @@ public class ControladorMesa {
 				//Aqui arameremos el ticket de la cuenta 
 				//Usaremos setring builder
 				StringBuilder ticket = new StringBuilder();
-				LocalDateTime ahora = LocalDateTime.now();
-				DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/YYYY HH:mm:ss");
-				
-				ticket.append("===============================\n");
-				ticket.append("          TAQUERIA GON         \n");
-				ticket.append("          Desde 1985           \n");
-				ticket.append("        Jesus Maria Ags.       \n");
-				ticket.append("      Agustin Iturbide 108     \n");
-				ticket.append("===============================\n");
-				ticket.append("Fecha: ").append(ahora.format(formato)).append("\n");
-				ticket.append("Mesa: ").append(numMesa).append("\n");
+
 
 				
 				//Aqui vi un problema y es que si agrega el text mesa tambien en el ticket agarra los productos no terminados asi que mejor los 
 				//hagarramos desde la base de datos 
 				double totalMesa=0.0;
-				String sqlTotalMesa = "SELECT cantidad, producto, precio FROM pedidos WHERE idPersona IN(SELECT idPersona FROM personas WHERE idCuenta=?)";
+				String sqlTotalMesa = "SELECT per.nombre, ped.cantidad, ped.producto, ped.precio "+
+							 "FROM personas per "+
+							 "JOIN pedidos ped ON per.idPersona = ped.idPersona " +
+							 "WHERE per.idCuenta = ? "+
+							 "ORDER BY per.idPersona ASC, ped.idPedido ASC";
 				try(PreparedStatement psPed = con.prepareStatement(sqlTotalMesa)){
 					psPed.setInt(1, idCuentaActiva);
 					ResultSet rsPed=psPed.executeQuery();
+					//Vamos a dividir el ticket en subcuentas para que sepa cuanto es para cada persona
+					String personaActual="";
+					double subtotalPersona=0.0;
 					while(rsPed.next()) {
+						String nombrePersona = rsPed.getString("nombre");
 						int cant = rsPed.getInt("cantidad");
 						String prod = rsPed.getString("producto");
 						double precioTotal = rsPed.getDouble("precio");
+						//Si el nombre actual no coincide con el nuevo entoces ya cambiamos de persona
+						if(!nombrePersona.equals(personaActual)) {
+							if(!personaActual.equals("")) {//Si no es el primer caso mandamos a imprimir
+								ticket.append(String.format("     Subtotal %s: $%6.2f\n\n",personaActual,subtotalPersona));
+							}
+							ticket.append("--- ").append(nombrePersona).append(" ---\n");
+							personaActual=nombrePersona;
+							subtotalPersona=0.0;
+						}
+						
 						if(prod.length()>20) {
 							prod=prod.substring(0,18)+"..";//Si sobrepasa los 20 caracteres se escribe ..
 						}
 						ticket.append(String.format("%-3d %-20s $%6.2f\n", cant, prod, precioTotal));
+						subtotalPersona+=precioTotal;
 						totalMesa+=precioTotal;
 					}
-				}
-				ticket.append("-------------------------------\n");
-				ticket.append(String.format("%-24s $%6.2f\\n", "TOTAL A PAGAR: ",totalMesa));
-				ticket.append("===============================\n");
-				ticket.append("         Vuelva Pronto         \n");
-				ticket.append("===============================\n");
-				
+					if(!personaActual.equals("")) {//Si no es el primer caso mandamos a imprimir
+						ticket.append(String.format("     Subtotal %s: $%6.2f\n\n",personaActual,subtotalPersona));
+					}
+				}		
 				//Ya esta el ticket generado, ahora insertaremos los datos a la tabla finanzas 
-				String sqlInsertFinanzas = "INSERT INTO finanzas (tipo,monto,detalle) VALUES ('VENTA',?,?)";
+				String sqlInsertFinanzas = "INSERT INTO finanzas (tipo,Categoria,monto,detalle) VALUES ('VENTA','COBRO LOCAL',?,?)";
 				try(PreparedStatement psFinan = con.prepareStatement(sqlInsertFinanzas)){
 					psFinan.setDouble(1, totalMesa);//Aqui iria insertado el total de la mesa, vamos a calcularlo antes desde la base de datos
 					psFinan.setString(2, ticket.toString());
@@ -288,6 +294,9 @@ public class ControladorMesa {
 				borrarCuentaActiva(numMesa,con);
 				cambiarEstadoMesaLibre(numMesa,con);
 				con.commit();
+  
+    			//llamamos a la clase nueva para generar su ticket
+    			GeneradorTicket.generarTxtPedido(ticket.toString(), totalMesa);
 				return true;
 			}
 			return false;

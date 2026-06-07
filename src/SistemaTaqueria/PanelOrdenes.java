@@ -518,8 +518,8 @@ public class PanelOrdenes extends JPanel {
         			psEstado.executeUpdate();
         			//Confirmamos la actualizacion
         			con.commit();
-        			JOptionPane.showMessageDialog(null, "Orden de la mesa "+mesa.getNumMesa()+" añadida con exito a la base de datos", "Actu BD", JOptionPane.INFORMATION_MESSAGE);	
-        			//Limpiamos todo lo de la pantalla para la siguiente orden 
+        			JOptionPane.showMessageDialog(null, "Orden de mesa"+mesa.getNumMesa()+" guardada con exito!","Exito", JOptionPane.INFORMATION_MESSAGE);
+        			
         			limpiarTodo();
         			
         			//Nos regresamos a mesas
@@ -818,40 +818,36 @@ public class PanelOrdenes extends JPanel {
 		            
 		        }
 			}
-        };
+        }; 
         for(Enumeration<AbstractButton> cantidad = grupoCantidad.getElements(); cantidad.hasMoreElements();) {
         	cantidad.nextElement().addActionListener(validarCantidad);
         }
         //Añadimos un key listener al text field para que no tenga seleccionado una cantidad en caso de que escriba algo
         textFieldCantidad.addKeyListener(new java.awt.event.KeyAdapter(){
         	public void keyReleased(java.awt.event.KeyEvent evt) {
-        		int cant=0;
-        		try {
-        			if(!textFieldCantidad.getText().equals("")) cant = Integer.parseInt(textFieldCantidad.getText());
-        			if(cant>99||cant<=0) throw new Exepcion("Cantidad no permitida");
-        	
-        		}
-        		catch(NumberFormatException ex1) {
-        			JOptionPane.showMessageDialog(null, "Cantidad invalida.", "Error", JOptionPane.ERROR_MESSAGE);
-        			textFieldCantidad.setText("");
-        		}
-        		catch(Exepcion ex0) {
-           			JOptionPane.showMessageDialog(null, ex0.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        			textFieldCantidad.setText("");
-        		}
-        		
-        		if(textFieldCantidad.getText().equals("")) {
-            		rbCant1.setEnabled(true);
-            		rbCant1.setSelected(true);
-            		rbCant1.doClick();
-        		}
-        		else { 
+        		String texto = textFieldCantidad.getText().trim();
+        		if(texto.isEmpty()) {
+        			rbCant1.setEnabled(true);
+        			rbCant1.setSelected(true);
         			rbCant1.doClick();
-        			if(cant>99||cant<0) {
+        			return;
+        		}
+        		else {
+        			try {
+        				int cant = Integer.parseInt(texto);
+        				if(cant<=0||cant>99) {
+        					JOptionPane.showMessageDialog(null,"Cantidad invalida","Alerta",JOptionPane.WARNING_MESSAGE);
+        					textFieldCantidad.setText("");
+        					rbCant1.doClick();
+        					return;
+        				}
+        				rbCant1.doClick();
+        				grupoCantidad.clearSelection();
+        			}catch(NumberFormatException ex1) {
+        				JOptionPane.showMessageDialog(null,"Cantidad invalida","Alerta",JOptionPane.WARNING_MESSAGE);
         				textFieldCantidad.setText("");
+        				rbCant1.doClick();
         			}
-        			grupoCantidad.clearSelection();
-        			
         		}
         	}
         });
@@ -1012,11 +1008,15 @@ public class PanelOrdenes extends JPanel {
     }
     
     public void limpiarTodo() {
+    	textFieldCantidad.setText("");
     	rbTacos.doClick();
+    	rbCant1.setEnabled(true);
     	rbCant1.doClick();
     	rbPastor.setSelected(true);
-    	textFieldCantidad.setText("");
     	grupoConTodo.clearSelection();
+        chkConQueso.setSelected(false);
+        chkSinAderezo.setSelected(false);
+        chkSinVerduras.setSelected(false);
     	
     }
 

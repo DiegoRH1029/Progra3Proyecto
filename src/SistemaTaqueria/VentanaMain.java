@@ -36,6 +36,10 @@ public class VentanaMain extends JFrame {
     private PanelOrdenes panelOrden;
     private PanelPedidos panelPedidos;
     private PanelHistorial panelHistorial;
+    private PanelCorte panelCorte;
+    private PanelTicket panelticket;
+    private PanelGastos panelGastos;
+    private PanelInventario panelInventario;
 
     // Botones globales
     private JButton btnOrdenes;
@@ -44,6 +48,7 @@ public class VentanaMain extends JFrame {
     private JButton btnHistorialDeVentas;
     private JButton btnGastos;
     private JButton btnTickets;
+    private JButton btnInventario;
     private JButton btnSalir;
 
     /**
@@ -67,6 +72,9 @@ public class VentanaMain extends JFrame {
      * Create the frame.
      */
     public VentanaMain() {
+    	//Arrancamos el hilo
+    	MonitorInventario monitor= new MonitorInventario();
+    	monitor.start();
         setTitle("Sistema Taquería");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 1000, 650);
@@ -132,10 +140,28 @@ public class VentanaMain extends JFrame {
         panelPedidos.setVentanaMain(this);
         panelContenedor.add(panelPedidos, "PEDIDOS");
         
+        panelPedidos= new PanelPedidos();
+        panelPedidos.setVentanaMain(this);
+        panelContenedor.add(panelPedidos, "PEDIDOS");
+        
+        panelInventario= new PanelInventario();
+        panelInventario.setVentanaMain(this);
+        panelContenedor.add(panelInventario, "INVENTARIO");
+        
+        panelCorte =new PanelCorte();
+        panelContenedor.add(panelCorte, "CORTE");
+        panelticket =new PanelTicket();
+        panelContenedor.add(panelticket, "TICKET");
+        
         panelHistorial= new PanelHistorial();
-        panelHistorial.setVentanaMain(this);
         panelContenedor.add(panelHistorial, "HISTORIAL");
         
+        panelGastos = new PanelGastos();
+        panelContenedor.add(panelGastos, "GASTOS");
+        
+        
+        
+              
         // Estado inicial: Mostrar Login y ocultar el menú lateral
         cardLayout.show(panelContenedor, "LOGIN");
         panelMenu.setVisible(false);
@@ -163,6 +189,10 @@ public class VentanaMain extends JFrame {
         panelMenu.add(btnHistorialDeVentas);
         panelMenu.add(Box.createRigidArea(new Dimension(0, 10)));
         
+        btnInventario = new JButton("Inventario");
+        estilizarBoton(btnInventario);
+        panelMenu.add(btnInventario);
+        panelMenu.add(Box.createRigidArea(new Dimension(0, 10)));
         btnGastos = new JButton("Gastos");
         estilizarBoton(btnGastos);
         panelMenu.add(btnGastos);
@@ -193,20 +223,32 @@ public class VentanaMain extends JFrame {
         });
         btnCorteDeCaja.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		navegarA("CORTE");
         	}
         });
         btnHistorialDeVentas.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		panelHistorial.cargarDatosEnTabla();
         		navegarA("HISTORIAL");
         	}
         });
         btnGastos.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
+        		navegarA("GASTOS");
         	}
         });
         btnTickets.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        	}
+        		panelticket.cargarArchivosTickets();
+        		navegarA("TICKET");
+        	} 
+        });
+        btnInventario.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		panelInventario.cargarInventarioEnTabla();
+        		mostrarMenu(false);
+        		navegarA("INVENTARIO");
+        	} 
         });
         btnSalir.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {

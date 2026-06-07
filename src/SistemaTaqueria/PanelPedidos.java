@@ -84,6 +84,9 @@ public class PanelPedidos extends JPanel {
 		tablaCocina.setForeground(Color.WHITE);
 		tablaCocina.setBackground(new Color(60,60,60));
 		tablaCocina.setSelectionBackground(new Color(46,204,113));
+		tablaCocina.getTableHeader().setBackground(new Color(45,45,45));
+		tablaCocina.getTableHeader().setForeground(Color.white);
+		tablaCocina.getTableHeader().setFont(new Font("Segoe UI",Font.PLAIN,15));
 		
 		tablaCocina.removeColumn(tablaCocina.getColumnModel().getColumn(0));
 		//Ajustamos los anchos

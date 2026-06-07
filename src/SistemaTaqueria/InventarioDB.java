@@ -1,5 +1,8 @@
+//Esta clase carga toda la base de datos (tabla inventario) en memoria en tablas hash para acceder rapidamente a la informacion
 package SistemaTaqueria;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.swing.JOptionPane;
 
@@ -10,6 +13,9 @@ import java.sql.SQLException;
 
 public class InventarioDB {
 	//Creamos unas tablas hash para controlar y guardar el intenvario
+	private static HashMap<String, Integer> idsProd = new HashMap<>(); //Para guardar los ids de los productos
+	private static HashMap<String, String> categorias = new HashMap<>(); //Para guardar las categorias del producto
+	private static List<String> ordenProd = new ArrayList<>(); //Guarda el orden en que estan guardados
 	private static HashMap<String, Double> precios = new HashMap<>(); //Para guardar precios
 	private static HashMap<String, Boolean> disponible = new HashMap<>(); //Para guardar disponibilidad
 	private static HashMap<String, Integer> stock = new HashMap<>(); //Para guardar stock del producto
@@ -18,24 +24,31 @@ public class InventarioDB {
 	//funcion que carga los valores de la base de datos inventario al programa
 	public static void cargarInventarioDB() {
 		//Borramos si hubo valores anteriores
+		idsProd.clear();
+		categorias.clear();
+		ordenProd.clear();
 		precios.clear();
 		disponible.clear();
 		stock.clear();
 		controlStock.clear();
 		
 		//Conectamos
-		String sql = "SELECT nombre,precio,disponible,stock,controla_stock FROM inventario";
+		String sql = "SELECT idProd,nombre,categoria,precio,disponible,stock,controla_stock FROM inventario ORDER BY categoria,nombre";
 		try(Connection con = ConexionBD.obtenerConexion();
 				PreparedStatement ps = con.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery())
 		{
 				while(rs.next()) { //Recorremos inventario tabla
+					int idProd = rs.getInt("idProd");
 					String nombre = rs.getString("nombre");
+					String categoria = rs.getString("categoria");
 					double precio = rs.getDouble("precio");
 					boolean estaDisponible = rs.getBoolean("disponible");
 					boolean llevaStock = rs.getBoolean("controla_stock");
 					int stockActual = rs.getInt("stock");
 					//Guarda,ps los datos 
+					idsProd.put(nombre, idProd);
+					categorias.put(nombre,categoria);
 					precios.put(nombre,precio);
 					controlStock.put(nombre, llevaStock);
 					//Si lleva sotck y ya no hay stock lo apagamos 
@@ -44,6 +57,7 @@ public class InventarioDB {
 					}
 					disponible.put(nombre, estaDisponible);
 					stock.put(nombre, stockActual);
+					ordenProd.add(nombre); //Esto guarda el orden de la tabla 
 				}
 		}
 		catch(NumberFormatException e1) {
@@ -53,6 +67,19 @@ public class InventarioDB {
 			JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
 
+	}
+	//Funcion para obtener la lista del inventario en orden
+	public static List<Object[]> obtenerDatosInventario(){
+		cargarInventarioDB();
+		List <Object[]> lista = new ArrayList<>();
+		for(String nombre: ordenProd) {
+			lista.add(new Object[]{
+				idsProd.get(nombre),
+				nombre,categorias.get(nombre),precios.get(nombre),
+				stock.get(nombre),controlStock.get(nombre),disponible.get(nombre)
+			});
+		}
+		return lista;
 	}
 	//Metodo para consultas y modificaciones del inventario 
 	//Vamos a implementar restar stock
@@ -117,15 +144,12 @@ public class InventarioDB {
 		String desc=descBD.toLowerCase();
 		if(desc.contains("tacos")) return "Tacos";
 		else if(desc.contains("tortas")) return "Tortas";
-		else if(desc.contains("quesadillas")) return "Quesadillas";
+		else if(desc.contains("ques")) return "Quesadillas";
 		else if(desc.contains("burros")) return "Burros";
 		else if(desc.contains("volcanes")) return "Volcanes";
 		else if(desc.contains("hamburguesa")) return "Hamburguesa";
 		else if(desc.contains("hotdogs")) return "HotDogs";
-		else if(desc.contains("600ml")) return "Refresco 600ml";
-		else if(desc.contains("350ml")) return "Refresco 350ml";
-		else if(desc.contains("1L")) return "Aguas 1L";
-		else if(desc.contains("medioL")) return "Aguas MedioL";
+
 		return descBD;
 	}
 	//Para retornar su precio actual

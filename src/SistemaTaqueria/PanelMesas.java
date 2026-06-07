@@ -270,7 +270,7 @@ public class PanelMesas extends JPanel {
 	
 			switch (estaMesa.getEstadoMesa()) {
 			case LIBRE:
-				botones[i].setBackground(new Color(255,165,0)); //Azul rey
+				botones[i].setBackground(new Color(8,51,162)); //Azul rey
 				break;
 			case ESPERANDO: //Ya se ocupo y se tomo su pedido 
 				botones[i].setBackground(new Color(255,255,0));//Amarillo
