@@ -282,6 +282,7 @@ public class ControladorMesa {
 						ticket.append(String.format("%-3d %-20s $%6.2f\n", cant, prod, precioTotal));
 						subtotalPersona+=precioTotal;
 						totalMesa+=precioTotal;
+
 					}
 					if(!personaActual.equals("")) {//Si no es el primer caso mandamos a imprimir
 						ticket.append(String.format("     Subtotal %s: $%6.2f\n\n",personaActual,subtotalPersona));

@@ -506,11 +506,17 @@ public class PanelOrdenes extends JPanel {
         					psPedido.setString(5, estadoFinal);
         					psPedido.executeUpdate();
         					//Aqui restamos el nuevo stock en la memoria y lo guardamos en la base de datos
-        					if(estadoFinal=="Pendiente") {
-            					String nombreBase=InventarioDB.obtenerNombreBase(prod.toString());
-            					InventarioDB.restarStockMemoria(nombreBase, prod.getCant());
-            					InventarioDB.actualizarStockBD(nombreBase, con);
+        			
+        					if ("Pendiente".equalsIgnoreCase(estadoFinal)) {
+        					    String nombreBase = InventarioDB.obtenerNombreBase(prod.toString());
+        					    
+        					    // AGREGA ESTO PARA DEPURAR:
+        					    System.out.println("Intentando restar stock a: [" + nombreBase + "]");
+        					    
+        					    InventarioDB.restarStockMemoria(nombreBase, prod.getCant());
+        					    InventarioDB.actualizarStockBD(nombreBase, con);
         					}
+        		
         				}
         			}
         			//Actualizamos el estado de la mesa despues de guardar la orden
@@ -518,6 +524,7 @@ public class PanelOrdenes extends JPanel {
         			PreparedStatement psEstado =  con.prepareStatement(sqlEstado);
         			psEstado.setInt(1, mesa.getNumMesa());
         			psEstado.executeUpdate();
+   
         			//Confirmamos la actualizacion
         			con.commit();
         			JOptionPane.showMessageDialog(null, "Orden de mesa"+mesa.getNumMesa()+" guardada con exito!","Exito", JOptionPane.INFORMATION_MESSAGE);

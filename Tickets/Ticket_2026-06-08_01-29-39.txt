@@ -1,0 +1,24 @@
+===============================
+          TAQUERIA GON         
+          Desde 1985           
+        Jesus Maria Ags.       
+      Agustin Iturbide 108     
+===============================
+Fecha y Hora: 2026-06-08_01-29-39
+------------------------
+DETALLE DEL CONSUMO:  
+--- Diego ---
+5   Tacos p              $100.00
+5   Vol cho s/verd       $175.00
+     Subtotal Diego: $275.00
+
+--- Persona 2 ---
+3   Tacos p              $ 60.00
+1   Tacos p              $ 20.00
+     Subtotal Persona 2: $ 80.00
+
+
+------------------------
+TOTAL A PAGAR: $355.0
+=========================
+ Gracias por su compra!  

@@ -33,7 +33,7 @@ public class InventarioDB {
 		controlStock.clear();
 		
 		//Conectamos
-		String sql = "SELECT idProd,nombre,categoria,precio,disponible,stock,controla_stock FROM inventario ORDER BY categoria,nombre";
+		String sql = "SELECT idProd,nombre,categoria,precio,disponible,stock,controla_stock FROM inventario ORDER BY idProd";
 		try(Connection con = ConexionBD.obtenerConexion();
 				PreparedStatement ps = con.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery())

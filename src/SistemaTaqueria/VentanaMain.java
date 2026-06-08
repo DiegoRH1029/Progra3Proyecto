@@ -296,6 +296,7 @@ public class VentanaMain extends JFrame {
             btnHistorialDeVentas.setVisible(false);
             btnGastos.setVisible(false);
             btnTickets.setVisible(false);
+            btnInventario.setVisible(false);
         }else if(rol.equalsIgnoreCase("administrador")) {
             // Si eres el jefe, prendemos todo
             btnCorteDeCaja.setVisible(true);

@@ -1,0 +1,19 @@
+===============================
+          TAQUERIA GON         
+          Desde 1985           
+        Jesus Maria Ags.       
+      Agustin Iturbide 108     
+===============================
+Fecha y Hora: 2026-06-08_01-29-33
+------------------------
+DETALLE DEL CONSUMO:  
+--- Persona 1 ---
+8   Ques cho             $440.00
+1   Tacos p              $ 20.00
+     Subtotal Persona 1: $460.00
+
+
+------------------------
+TOTAL A PAGAR: $460.0
+=========================
+ Gracias por su compra!  
