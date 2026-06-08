@@ -1,3 +1,4 @@
+//El metodo mas extneso de nuestro codigo, es el panel de ordenes, esta aqui toda la logica de donde se genera una orden
 package SistemaTaqueria;
 
 import javax.swing.*;
@@ -7,7 +8,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.awt.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
@@ -320,16 +320,17 @@ public class PanelOrdenes extends JPanel {
         estilizarBoton(btnAnadirProducto, new Color(46, 204, 113), Color.WHITE); // Verde
         estilizarBoton(btnTerminarPersona, new Color(255, 193, 7), Color.BLACK); // Amarillo
         estilizarBoton(btnRegresar, new Color(100, 100, 100), Color.WHITE);      // Gris
-        estilizarBoton(btnFinalizar, new Color(211, 47, 47), Color.WHITE);       // Rojo
+        estilizarBoton(btnFinalizar, new Color(232, 75, 60), Color.WHITE);       // Rojo
         estilizarBoton(editarNombre, new Color(8,51,162), Color.WHITE);       // azul
         estilizarBoton(btnEliminarProducto,new Color(232, 75, 60), Color.WHITE); //Rojo mas oscuro
-        estilizarBoton(btnActualizarProducto,new Color(20, 200, 100), Color.WHITE); //verde?
+        estilizarBoton(btnActualizarProducto,new Color(46, 204, 113), Color.WHITE); //verde?
         
         panelBotonesAccion.add(btnAnadirProducto);
         panelBotonesAccion.add(btnActualizarProducto);
-        panelBotonesAccion.add(btnEliminarProducto);
+      
         panelBotonesAccion.add(editarNombre);
         panelBotonesAccion.add(btnTerminarPersona);
+        panelBotonesAccion.add(btnEliminarProducto);
         panelBotonesAccion.add(btnFinalizar);
         panelBotonesAccion.add(btnRegresar);
  
@@ -350,7 +351,7 @@ public class PanelOrdenes extends JPanel {
         		}
         	}
         });
-
+        //Para decrementar cantidad del textfield
         btnDecCant.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		if(!textFieldCantidad.getText().equals("")) {
@@ -362,6 +363,7 @@ public class PanelOrdenes extends JPanel {
         		}
         	}
         });
+        //Funcion auxiliar para borrar todo lo seleccionadao
         btnLimpiar.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
         		textFieldCantidad.setText("");
@@ -1051,6 +1053,16 @@ public class PanelOrdenes extends JPanel {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(new Color(255, 193, 7)); // Cambia a Amarillo
+                btn.setForeground(Color.black); // Letra Negra
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bg); // Regresa a Rojo
+                btn.setForeground(Color.white); // Regresa a Blanca
+            }
+        });
     }
     
     private void estilizarMiniBoton(JButton btn, Color bg) {

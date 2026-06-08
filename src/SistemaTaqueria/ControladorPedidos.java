@@ -1,4 +1,5 @@
-//Esta clase controlara los pedidos usando FIFO, se cargaran desde la base de datos y tendra contorl para actualizar
+//Esta clase controlara los pedidos usando FIFO, se cargaran desde la base de datos los pedidos y tendra contorol para actualizar
+//El chef tiene opcion de liberar pedido ya sea por mesa completa, por persona o por prpoducto individual (tambien en cascada)
 package SistemaTaqueria;
 
 
@@ -13,9 +14,10 @@ import javax.swing.JOptionPane;
 import java.util.ArrayList;
 
 public class ControladorPedidos {
-	//esta sera la funcion que refresa la lista de edidos pendientes
+	//Metodo que devuelve una lista con todos los pedidos de la base de datos pendientes
 	public static List<Object[]> obtenerPedidosPendientes(){
 		List<Object[]> lista = new ArrayList <>();
+		//Se extrae toda la informacion del pedido desde la base de datos
 		String sql = "SELECT p.idPedido, m.idMesa, per.nombre, p.cantidad, p.producto,p.estado "+
 					"From pedidos p "+
 					"JOIN personas per ON p.idPersona = per.idPersona " +
@@ -41,6 +43,7 @@ public class ControladorPedidos {
 					}
 					return lista;
 	}
+	//Metodo que libera todos los pedidos de una persona 
 	//Haremos otros metodos, ya que es impractico estar liberando pedido por pedido
 	//Haremos que se puedan liberar pedidos de una mesa o persona completa
 	//Vamos a hacer una funcion para marcar el pedido como liberado
@@ -83,6 +86,7 @@ public class ControladorPedidos {
 			e1.printStackTrace();
 		}
 	}
+	//Metodo que libera una mesa completa 
 	//haremos lo mismo pero para liberar mesa completa
 	public static void liberarMesaCompleta(int numMesa) {
 		try(Connection con = ConexionBD.obtenerConexion();){
@@ -108,6 +112,7 @@ public class ControladorPedidos {
 			e1.printStackTrace();
 		}
 	}
+	//Metodo que libera un pedido individualmente
 	public static void liberarPedido(int idPedido,int numMesa) {
 		try(Connection con = ConexionBD.obtenerConexion();){
 			String sqlUpdatePed = "UPDATE pedidos SET estado = 'Terminado' WHERE idPedido = ?";
@@ -143,6 +148,7 @@ public class ControladorPedidos {
 			e1.printStackTrace();
 		}
 	}
+	//Metodo para reembolsar al inventario los pedidos que se liberaron y estaban pendeientes
 	//ahora lo que falta es el caso de que se libere una mesa que aun no se atiende, entonces los pedidos se eliminan pero no se restauraria el stock
 	//Por eso vamos a hacer un metodo que reembolse los pedidos que no se atendieron al stock
 	public static void reembolsarPedPendientes(int numMesa,Connection con)throws SQLException {

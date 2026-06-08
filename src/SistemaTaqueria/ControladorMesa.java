@@ -1,3 +1,4 @@
+//Clase que controla toda la logica de las mesas, guarda su estado los actualiza, hace los cobros y las libera
 package SistemaTaqueria;
 
 import java.util.List;
@@ -10,12 +11,11 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-
-
 public class ControladorMesa {
 	
-	private static List<Mesa> listaMesas = new ArrayList<>();
+	private static List<Mesa> listaMesas = new ArrayList<>(); //Se guarda en su memoria una lista de las mesas en memoria
 
+	//Este metodo genera la lista de las mesas desde la base de datos
 	//Actualizaremos este objeto para que jale todos los pedidos de la base de datos y los cargue en la lista de mesas
 	public static List<Mesa> generarListaMesas(){
 		try {
@@ -95,8 +95,9 @@ public class ControladorMesa {
 		
 		
 		
-		return listaMesas;
+		return listaMesas; //Retorna la lista
 	}
+	//Get estado de la mesa
 	public static EstadoMesa getEstadoMesa(int idMesa) {
 		EstadoMesa estadoEnum = null; 
 		if(!listaMesas.isEmpty()) {
@@ -111,6 +112,8 @@ public class ControladorMesa {
 	public static Mesa getMesa(int idMesa) {
 		return listaMesas.get(idMesa-1);
 	}
+	//Este metodo funciona ppara cancelar una mesa, hay varios tipos de cancelacion una es la total (no les sirvieron nada y no se cobra nada)
+	//Otra es la parcial (le llevaron unos pedidos y se les cobraran) en estos ultimos casos se suma stock a la base de datos y otra es cuando les sirvieron todos sus pedidos
 	//Implementaremos toda la logica de liberar/cancelar mesa
 	//Esta es para el caso de una mesa este en estado esperando
 	//Se le cobrara los pedidos "Terminados" pero se borran los demas y forza la mesa en estado libre
@@ -184,7 +187,7 @@ public class ControladorMesa {
 		}
 		
 	}
-	//Haremos otra funcion para borrar ccuenta completamente
+	//Metodo para borrar ccuenta completamente
 	private static void borrarCuentaActiva(int numMesa,Connection con)throws SQLException{
 		String sqlGetCuenta = "SELECT idCuenta FROM cuentas WHERE idMesa = ?";//Seleccionamos mesa
 		try(PreparedStatement psGet = con.prepareStatement(sqlGetCuenta)){
@@ -216,7 +219,7 @@ public class ControladorMesa {
 		
 	}
 	
-	//Ahora despues de borrar todo la mesa estara libre, usaremos este metodo
+	//Metodo que cambia la mesa de estado a libre a la base de datos
 	private static void cambiarEstadoMesaLibre(int numMesa,Connection con)throws SQLException{
 		String sqlEstado = "UPDATE mesas SET estado = 'Libre' WHERE idMesa = ?";
 		try(PreparedStatement psEstado = con.prepareStatement(sqlEstado)){

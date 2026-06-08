@@ -1,3 +1,4 @@
+//Panel que muestra la lista de tickets almacenados, se puededn seleccionar para verlos
 package SistemaTaqueria;
 
 import javax.swing.*;

@@ -1,4 +1,4 @@
-//Es un producto tipo snack
+//Es un producto tipo snack, atributos especiales los extras del snack (Sin aderezos sin verdura etc)
 package SistemaTaqueria;
 
 public class Snacks extends Producto{

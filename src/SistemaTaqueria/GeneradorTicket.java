@@ -1,3 +1,5 @@
+//Clase que genera un ticket dessde una string
+//Usa local time para imprimir la fecha actual 
 package SistemaTaqueria;
 
 import java.io.File;

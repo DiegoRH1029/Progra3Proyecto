@@ -1,3 +1,4 @@
+//Clase para generar una transaccion financiera 
 package SistemaTaqueria;
 //para tener la  fecha y hora actual 
 import java.time.LocalDateTime;

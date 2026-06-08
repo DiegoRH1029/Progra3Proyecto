@@ -7,8 +7,8 @@ import java.util.ArrayList;
 public class Persona {
 	private String nombre;
 	private int ind;
-	private ArrayList<Producto> listaProductos;
-
+	private ArrayList<Producto> listaProductos;//Para guardar los productos en memoria
+	
 	public Persona(String nombre, int ind) {
 		super();
 		this.nombre = nombre;
@@ -54,6 +54,7 @@ public class Persona {
 	public void setInd(int ind) {
 		this.ind = ind;
 	}
+	//Metodo parar obtener el total de una persona
 	public double getTotalPersona() {
 		double totalPersona=0.0;
 		if(listaProductos==null||listaProductos.isEmpty())return 0.0;

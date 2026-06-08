@@ -73,7 +73,7 @@ public class PanelInventario extends JPanel {
 			}
 			@Override
 			public boolean isCellEditable(int row, int column) {
-				return column==6;//solo podremos darle clik a la comna de disponible para alternarlo
+				return column ==3 ||  column==6;//solo podremos darle clik a la comna de disponible para alternarlo
 			}
 		};
 		tablaInventario = new JTable(modeloTabla);
@@ -139,12 +139,6 @@ public class PanelInventario extends JPanel {
 		panelSur.add(btnRegresar);
 		panelSur.add(btnAplicar);
 		add(panelSur,BorderLayout.SOUTH);
-		/*
-		estilizarBoton(btnArriba,new Color(255, 193, 7),Color.WHITE);
-		estilizarBoton(btnAbajo,new Color(255,0,0),Color.WHITE);
-		estilizarBoton(btnLiberar,new Color(8,51,162),Color.BLACK);
-		*/
-
 		
 		//------Acciones 
 		//Esta accion de la tabla es para detectar si hubo cambios 
@@ -218,17 +212,29 @@ public class PanelInventario extends JPanel {
 				}
 				try(Connection con = ConexionBD.obtenerConexion()) {
 					con.setAutoCommit(false);
-					String sqlUpdate ="UPDATE inventario SET stock = ?, disponible=? WHERE idProd = ?";
+					String sqlUpdate ="UPDATE inventario SET precio =? , stock = ?, disponible=? WHERE idProd = ?";
 					try(PreparedStatement ps = con.prepareStatement(sqlUpdate)){
 						for(int i=0; i<modeloTabla.getRowCount();i++) {
+							try {
 							int idProd = (int)modeloTabla.getValueAt(i,0);
+							String precioStr = modeloTabla.getValueAt(i,3).toString();
+							double precio = Double.parseDouble(precioStr);
 							int stockFinal = (int) modeloTabla.getValueAt(i,4);
 							boolean disponible = (boolean) modeloTabla.getValueAt(i, 6);
-							
-							ps.setInt(1,stockFinal);
-							ps.setBoolean(2,disponible);
-							ps.setInt(3,idProd);
+							ps.setInt(2,stockFinal);
+							ps.setDouble(1, precio);
+							ps.setBoolean(3,disponible);
+							ps.setInt(4,idProd);
 							ps.addBatch();
+							}
+							catch(NumberFormatException ex2) {
+								JOptionPane.showMessageDialog(null,"Error","Aviso",JOptionPane.INFORMATION_MESSAGE);
+								con.rollback();
+								cargarInventarioEnTabla();
+								return;
+							}
+							
+
 						}
 						ps.executeBatch();
 					}
@@ -278,11 +284,11 @@ public class PanelInventario extends JPanel {
                 // Efecto Hover: Cambiar color al pasar el mouse (Corregido 'mouseEntered')
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(new Color(255, 193, 7)); // Cambia a Amarillo
+                btn.setBackground(new Color(8,51,162)); // Cambia a Amarillo
                 btn.setForeground(Color.black); // Letra Negra
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                btn.setBackground(new Color(211, 47, 47)); // Regresa a Rojo
+                btn.setBackground(bg); // Regresa a Rojo
                 btn.setForeground(Color.white); // Regresa a Blanca
             }
         });

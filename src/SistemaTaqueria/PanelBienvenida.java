@@ -1,3 +1,4 @@
+//Clase de jpnael que imprime el panel de bienbendia
 package SistemaTaqueria;
 
 import javax.swing.JPanel;
@@ -27,7 +28,7 @@ public class PanelBienvenida extends JPanel {
 		GridBagConstraints gbcLo= new GridBagConstraints();
 		gbcLo.fill= GridBagConstraints.HORIZONTAL;
 		gbcLo.gridx=0;
-		
+		//Para imprimir una imagen 
 		gbcLo.gridy =0;
 		gbcLo.insets = new Insets(0,0, 30,0);
 		JLabel lblLogo = new JLabel("", SwingConstants.CENTER);
@@ -47,7 +48,7 @@ public class PanelBienvenida extends JPanel {
 		gbcUsu.gridy=2;
 		gbcUsu.insets = new Insets(0, 0, 0, 0);
 		
-		
+		//Imprime el usuario 
 		lblUsuario = new JLabel("USUARIO", SwingConstants.CENTER);
 		lblUsuario.setFont(new Font("Segoe UI",Font.BOLD, 36));
 	   lblLogo.setForeground(new Color(200,200,200));

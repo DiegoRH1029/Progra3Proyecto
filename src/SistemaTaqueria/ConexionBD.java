@@ -1,3 +1,4 @@
+//Clase para establecer conexxion con nuestra base de datos, aqui se registra el nombre y la contrasela y url
 package SistemaTaqueria;
 
 import java.sql.Connection;
