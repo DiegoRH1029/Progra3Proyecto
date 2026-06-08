@@ -1,6 +1,12 @@
 package SistemaTaqueria;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class MonitorInventario extends Thread {
 	private boolean ejecutando= true;
@@ -22,13 +28,25 @@ public class MonitorInventario extends Thread {
 			try {
 				Thread.sleep(15000);//revisar cada 15 segundos
 				
-				boolean stockBajoEnBD=comprobarEnBaseDeDatos();
+				//Cambio: vamos a imprimir los productos que estan bajos desde la base de datos
+				String productosBajos=comprobarEnBaseDeDatos();
 				
-				if (stockBajoEnBD && !alertaActiva) {
+				if (!productosBajos.isEmpty() && !alertaActiva) {
 					alertaActiva=true;
-					//aqui informamos
-					//tendra que consultar isAlertaActiva() usando un timer
-					System.out.println( "LOG INTERNO: Se detecto stock bajo. Cambiando estado de la alerta a TRUE");
+					SwingUtilities.invokeLater(new Runnable(){
+						@Override
+						public void run() {
+							JOptionPane.showMessageDialog(null,"!Tiene productos con bajo inventario: \n\n"+productosBajos+
+														"\nFavor de resurtir","Alerta stock",JOptionPane.WARNING_MESSAGE);
+							//aqui informamos
+							//tendra que consultar isAlertaActiva() usando un timer
+							System.out.println( "LOG INTERNO: Se detecto stock bajo"+productosBajos);
+						}
+					});
+
+				}
+				else if(productosBajos.isEmpty()){
+					alertaActiva=false;
 				}
 			} catch (InterruptedException e) {
 				
@@ -36,8 +54,23 @@ public class MonitorInventario extends Thread {
 			}
 		}
 	}
-	private boolean comprobarEnBaseDeDatos() {
+	private String comprobarEnBaseDeDatos() {
+		StringBuilder bajos =  new StringBuilder();
+		//Buscaremos los prodcutos que tengan stock menor a 5 y que tengan control stock = true
+		String sql = "SELECT nombre, stock FROM inventario WHERE controla_stock=true AND stock<=5";
+		try(Connection con=ConexionBD.obtenerConexion();
+					PreparedStatement ps = con.prepareStatement(sql);
+					ResultSet rs = ps.executeQuery()){
+			while(rs.next()) {
+				String nombre = rs.getString("nombre");
+				int stockActual = rs.getInt("stock");
+				bajos.append(" - ").append(nombre).append(" (quedan: ").append(stockActual).append(")\n");
+			}
+			
+		}catch(SQLException ex) {
+			System.out.println("Error al leer stock en el hilo"+ex.getMessage());
+		}
 		//Simulacion logica
-		return Math.random()>0.1;
+		return bajos.toString();
 	}
 }
